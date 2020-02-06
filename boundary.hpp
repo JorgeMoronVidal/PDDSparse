@@ -6,23 +6,47 @@
 #include <string>
 #include <eigen3/Eigen/Core>
 #include "lookuptable.hpp"
-
+/*Boundary is a class which stores the boundary-related functions*/
 class Boundary{
 
-    typedef float (*pfbound)(float* params, Eigen::VectorXf &, Eigen::VectorXf &);
+    typedef float (*pfbound)(float*, Eigen::VectorXf &, Eigen::VectorXf &);
+    typedef bool (*pfstop)(Eigen::MatrixXf);
 
     private:
 
+        /*If the distance function is given by an analytic 
+        function, it is stored in Distance_Analytic */
         pfbound Distance_Analytic;
+
+        /*If the distance function is given by a look up 
+        table, it is stored in Distance_Numeric */
         LookUpTable Distance_Numeric;
+
+        //True if stopping, false if reflecting
+        pfstop stop;
+
+        /*True if Distance_Analytic gives the distance
+          False if Distance_Numeric gives the distance*/
         bool analytic;
 
     public:
-
+        //Initialization by default
         Boundary(void);
-        void _init_(pfbound);
-        void _init_(std::string);
-        float dist(float* params, Eigen::VectorXf &, Eigen::VectorXf &);
+
+        //Initialization with Analytic Distance function
+        void _init_(pfbound, pfstop);
+
+        //Initialization Distance stored in a look up table
+        void _init_(std::string, pfstop);
+
+        /*-Returns distance to the boundary (Negative if inside, positive if outside)
+          -Modifies the normal vector
+          -Modifies exitpoint
+          -If outside, particle is placed on the boundary again*/
+        float dist(float* params, 
+                   Eigen::VectorXf & position, 
+                   Eigen::VectorXf & exitpoint,
+                   Eigen::VectorXf & normal);
 
 };
 #endif

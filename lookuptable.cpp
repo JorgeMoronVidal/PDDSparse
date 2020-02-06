@@ -3,8 +3,11 @@
 #include <fstream>
 #include <string>
 
-LookUpTable::LookUpTable(int dim, std::string label){
+LookUpTable::LookUpTable(void){
+}
+void LookUpTable::Init(int dim, std::string file){
 
+    //x and len are dinamically allocated
     x = new double*[dim];
     len = new int[dim];
     int  count = 0;
@@ -12,8 +15,17 @@ LookUpTable::LookUpTable(int dim, std::string label){
     std::string aux,line;
 
     for(int i = 0; i < dim; i++){
-        aux = label + "/x_" + std::to_string(i) + ".txt";
+        //We charge the grid coordinates
+        aux = file + "/x_" + std::to_string(i) + ".txt";
+        //We check if the file actually exist
         infile.open(aux,std::ios::in);
+        if(! infile){
+            std::cout << aux << " couldn't be opened.\n Make sure "<< 
+            "x_" + std::to_string(i) + ".txt" << " is available in " <<
+            file << std::flush;
+            std::terminate();
+        }
+        //The file is ridden
         while (getline( infile, line )){
             count++;
         }
@@ -29,8 +41,13 @@ LookUpTable::LookUpTable(int dim, std::string label){
         count = 0;
         infile.close();
     }
-    infile.open(label + "/value.txt");
-
+    //The file which stores the values of the function in the grid is open
+    infile.open(file + "/value.txt");
+    if(! infile){
+        std::cout << file + "/value.txt" << " couldn't be opened.\n Make sure "<< 
+        "value.txt" << " is available in " <<file << std::flush;
+        std::terminate();
+    }
     std::string cent;
     std::string::iterator it;
 
@@ -40,6 +57,7 @@ LookUpTable::LookUpTable(int dim, std::string label){
         mesh_size *= len[i];
         counter[dim] = 0;
     }
+    //It's values are stored in z
     z = new double[mesh_size];
     while (getline( infile, line )){
         it = line.begin();
@@ -63,6 +81,7 @@ LookUpTable::LookUpTable(int dim, std::string label){
         counter[1]++;//row number
         counter[0] = 0;//column number
     }
+    //Then the spline is initialized
     infile.close();
     T = gsl_interp2d_bicubic;
     spline = gsl_spline2d_alloc(T, len[0], len[1]);
@@ -71,26 +90,28 @@ LookUpTable::LookUpTable(int dim, std::string label){
     gsl_spline2d_init(spline, x[0], x[1], z, len[0], len[1]);
 }
 
-float LookUpTable::Eval(Eigen::VectorXf & position){
-    float dist = gsl_spline2d_eval(spline, position(0), position(1), xacc, yacc);
-
-    if(dist > 0.0){
-        position(0) = position(0) - gsl_spline2d_eval_deriv_x(spline, position(0), position(1), xacc, yacc)*dist;
-        position(1) = position(1) - gsl_spline2d_eval_deriv_y(spline, position(0), position(1), xacc, yacc)*dist;
-    }
+//Evaluation of the interpolated function when only a position is asked
+float LookUpTable::Eval(Eigen::VectorXf position){
     
-    return dist;
-}
+    return gsl_spline2d_eval(spline, position(0), position(1), xacc, yacc);
 
-float LookUpTable::Eval(Eigen::VectorXf & position, Eigen::VectorXf & normal){
+}
+//Evaluation of the interpolated function when a position and a normal vector have to be computed
+float LookUpTable::Eval(float *params, 
+                        Eigen::VectorXf & position, 
+                        Eigen::VectorXf & exitpoint,
+                        Eigen::VectorXf & normal)
+{
     float dist = gsl_spline2d_eval(spline, position(0), position(1), xacc, yacc);
 
     normal(0) = gsl_spline2d_eval_deriv_x(spline, position(0), position(1), xacc, yacc);
     normal(1) = gsl_spline2d_eval_deriv_y(spline, position(0), position(1), xacc, yacc);
 
+    exitpoint = position - normal* dist;
+
     if(dist > 0.0){
 
-        position = position - normal* dist;
+        position = exitpoint;
 
     }
 

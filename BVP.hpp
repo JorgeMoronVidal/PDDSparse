@@ -4,29 +4,31 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 #include <eigen3/Eigen/Core>
 #include "lookuptable.hpp"
 #include "boundary.hpp"
 
 /*
+ ScalarFunction is a class to save the functions that return 
+*/
+/*
  BVP stores the functions that can be used to compute the solution of 
  such kind of problems using the Feynman-Kak formula.
 */
-
 class BVP
 {  
-    typedef float (*pfscalar)(Eigen::VectorXf);
-    typedef Eigen::VectorXf (*pfvector)(Eigen::VectorXf);
-    typedef Eigen::VectorXf (*pfmatrix)(Eigen::MatrixXf);
-    typedef float (*pfbound)(float* params, Eigen::VectorXf &, Eigen::VectorXf &);
+    typedef float (*pfscalar)(Eigen::VectorXf X);
+    typedef Eigen::VectorXf (*pfvector)(Eigen::VectorXf X);
+    typedef Eigen::MatrixXf (*pfmatrix)(Eigen::VectorXf X);
+    typedef float (*pfbound)(float* params, 
+                             Eigen::VectorXf & position, 
+                             Eigen::VectorXf & exitpoint,
+                             Eigen::VectorXf & normal);
     typedef bool (*pfstop)(Eigen::MatrixXf);
 
     private:
-
-        //Default functions which always return 0.0f
-        float Default_Scalar(Eigen::VectorXf);
-        Eigen::VectorXf Default_Vector(Eigen::VectorXf);
-        Eigen::MatrixXf Default_Matrix(Eigen::VectorXf);
+        
         //LookAtTable stores the LookAtTable of those functions that are not defined analytically
         std::map<std::string, LookUpTable> bvplat;
 
@@ -44,16 +46,13 @@ class BVP
         //The boundary is stored in surf
         Boundary bound;
 
-        //The type of BC's is stored in stop
-        pfstop stop;
-
         //All the entries of the maps are set as Default. bvplat remains empty
         BVP(void);
 
         //The object is properly initialized given the functions or the directorys where the look up tables are stored.
         void BVP_init(std::map<std::string, pfscalar> map_fscalar,
                     std::map<std::string, pfvector> map_fvector,
-                    std::map<std::string, pfmatrix> map_fmatrix,
+                    std::map<std::string, pfmatrix> sigma,
                     std::map<std::string, std::string> map_lut);
 
         //Initialization of the surface variable
@@ -61,4 +60,9 @@ class BVP
         void Surf_init(std::string boundary , pfstop stopf);
 
 };
+
+//Default functions which always return 0.0f
+float Default_Scalar(Eigen::VectorXf X);
+Eigen::VectorXf Default_Vector(Eigen::VectorXf X);
+Eigen::MatrixXf Default_Matrix(Eigen::VectorXf X);
 #endif
