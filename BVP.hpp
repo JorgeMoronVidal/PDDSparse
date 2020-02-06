@@ -48,7 +48,8 @@ class BVP
         BVP(void);
 
         //The object is properly initialized given the functions or the directorys where the look up tables are stored.
-        void BVP_init(std::map<std::string, pfscalar> map_fscalar,
+        void BVP_init(int dim,
+                    std::map<std::string, pfscalar> map_fscalar,
                     std::map<std::string, pfvector> map_fvector,
                     std::map<std::string, pfmatrix> sigma,
                     std::map<std::string, std::string> map_lut);

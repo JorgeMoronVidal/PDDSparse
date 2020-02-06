@@ -16,37 +16,37 @@ BVP::BVP(void){
     control["stop"] = false;
 }
 
-void BVP::BVP_init(std::map<std::string, pfscalar> map_fscalar,
+void BVP::BVP_init(int dim,
+              std::map<std::string, pfscalar> map_fscalar,
               std::map<std::string, pfvector> map_fvector,
-              std::map<std::string, pfmatrix> sigma,
+              std::map<std::string, pfmatrix> map_fmatrix,
               std::map<std::string, std::string> map_lut)
 {       
     /* We read the maps and initialize the object components*/
-    std::string aux;
 
     for(std::map<std::string, pfscalar>::iterator it = map_fscalar.begin();
         it != map_fscalar.end(); 
         it ++){
 
-        aux = it->first;
-        if(aux == "f"){
+        if(it->first == "f"){
 
             f.Init(it->second);
 
-        } else if (aux == "c"){
+        } else if (it->first == "c"){
 
             c.Init(it->second);
 
-        }else if (aux == "u"){
+        }else if (it->first == "u"){
 
             u.Init(it->second);
 
-        }else if (aux == "varphi"){
+        }else if (it->first == "varphi"){
 
             varphi.Init(it->second);
 
         }
-        control[aux] = true;
+        control[it->first] = true;
+        std::cout << it->first << " was defined as an analytic function.";
     } 
 
     
@@ -54,29 +54,96 @@ void BVP::BVP_init(std::map<std::string, pfscalar> map_fscalar,
         it != map_fvector.end(); 
         it ++){
 
-        aux = it->first;
-        if(aux == "F"){
+        if(it->first == "F"){
 
             F.Init(it->second);
 
-        } else if (aux == "mu"){
+        } else if (it->first == "mu"){
 
             mu.Init(it->second);
 
-        }else if (aux == "b"){
+        }else if (it->first == "b"){
 
             b.Init(it->second);
 
-        }else if (aux == "psi"){
+        }else if (it->first == "psi"){
 
             psi.Init(it->second);
 
         }
 
-        control[aux] = true;
-        
+        control[it->first] = true;
+        std::cout << it->first << " was defined as an analytic function.";
+
+
     }
- 
+     for(std::map<std::string, pfmatrix>::iterator it = map_fmatrix.begin();
+        it != map_fmatrix.end(); 
+        it ++){
+
+        if(it->first == "sigma"){
+            sigma.Init(it->second);
+        }
+
+        std::cout << it->first << " was defined as an analytic function.";
+    }
+
+    for(std::map<std::string,std::string>::iterator it = map_lut.begin();
+        it != map_lut.end(); 
+        it ++){
+
+            if(!control[it->first]){
+
+                if(it->first == "f"){
+
+                    f.Init(dim, it->second);
+
+                }else if (it->first == "c"){
+
+                    c.Init(dim, it->second);
+
+                }else if (it->first == "u"){
+
+                    u.Init(dim, it->second);
+
+                }else if (it->first == "varphi"){
+
+                    varphi.Init(dim, it->second);
+
+                }else if(it->first == "F"){
+
+                    F.Init(dim, it->second);
+
+                } else if (it->first == "mu"){
+
+                    mu.Init(dim, it->second);
+
+                }else if (it->first == "b"){
+
+                    b.Init(dim, it->second);
+
+                }else if (it->first == "psi"){
+
+                    psi.Init(dim, it->second);
+
+                }else if (it->first == "sigma"){
+
+                    sigma.Init(dim, it->second);
+
+                }
+        }
+
+        std::cout << it->first << " was defined as an interpolated look up table.";
+    }
+
+    for(std::map<std::string,bool>::iterator it = control.begin();
+        it != control.end(); 
+        it ++){
+
+        if(!it->second){
+            std::cout<< "Function " << it->first << "of the BVP wasn't defined.";
+        }
+    }
 
 }
 
