@@ -1,37 +1,21 @@
 #include"BVP.hpp"
 
-float Default_Scalar(Eigen::VectorXf X)
-{   
-    return 0.0f;
-}
-
-Eigen::VectorXf Default_Vector(Eigen::VectorXf X)
-{   
-    Eigen::VectorXf out;
-    out.resize(X.size());
-    return out;
-}
-
-Eigen::MatrixXf Default_Matrix(Eigen::VectorXf X)
-{
-    Eigen::MatrixXf out;
-    out.resize(X.size());
-    return out;
-}
-
 BVP::BVP(void){
-    f =  Default_Scalar;
-    c = Default_Scalar;
-    u = Default_Scalar;
-    varphi = Default_Scalar;
 
-    F = Default_Vector;
-    mu = Default_Vector;
-    b = Default_Vector;
-    psi = Default_Vector;
-
-    sigma = Default_Matrix;
+    //initialization of the control map
+    control["f"] = false;
+    control["c"] = false;
+    control["u"] = false;
+    control["varphi"] = false;
+    control["F"] = false;
+    control["mu"] = false;
+    control["b"] = false;
+    control["psi"] = false;
+    control["sigma"] = false;
+    control["domain"] = false;
+    control["stop"] = false;
 }
+
 void BVP::BVP_init(std::map<std::string, pfscalar> map_fscalar,
               std::map<std::string, pfvector> map_fvector,
               std::map<std::string, pfmatrix> sigma,
@@ -46,14 +30,23 @@ void BVP::BVP_init(std::map<std::string, pfscalar> map_fscalar,
 
         aux = it->first;
         if(aux == "f"){
-            f = it->second;
+
+            f.Init(it->second);
+
         } else if (aux == "c"){
-            c = it->second;
+
+            c.Init(it->second);
+
         }else if (aux == "u"){
-            u = it->second;
+
+            u.Init(it->second);
+
         }else if (aux == "varphi"){
-            varphi = it->second;
+
+            varphi.Init(it->second);
+
         }
+        control[aux] = true;
     } 
 
     
@@ -63,14 +56,25 @@ void BVP::BVP_init(std::map<std::string, pfscalar> map_fscalar,
 
         aux = it->first;
         if(aux == "F"){
-            F = it->second;
+
+            F.Init(it->second);
+
         } else if (aux == "mu"){
-            mu = it->second;
+
+            mu.Init(it->second);
+
         }else if (aux == "b"){
-            b = it->second;
+
+            b.Init(it->second);
+
         }else if (aux == "psi"){
-            psi = it->second;
+
+            psi.Init(it->second);
+
         }
+
+        control[aux] = true;
+        
     }
  
 

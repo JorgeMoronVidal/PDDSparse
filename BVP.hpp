@@ -7,41 +7,39 @@
 #include <vector>
 #include <eigen3/Eigen/Core>
 #include "lookuptable.hpp"
+#include "scalarfunction.hpp"
+#include "vectorfunction.hpp"
+#include "matrixfunction.hpp"
 #include "boundary.hpp"
 
-/*
- ScalarFunction is a class to save the functions that return 
-*/
 /*
  BVP stores the functions that can be used to compute the solution of 
  such kind of problems using the Feynman-Kak formula.
 */
 class BVP
 {  
-    typedef float (*pfscalar)(Eigen::VectorXf X);
-    typedef Eigen::VectorXf (*pfvector)(Eigen::VectorXf X);
-    typedef Eigen::MatrixXf (*pfmatrix)(Eigen::VectorXf X);
+    typedef float (*pfscalar)(Eigen::VectorXf, Eigen::VectorXf);
+    typedef Eigen::VectorXf (*pfvector)(Eigen::VectorXf, Eigen::VectorXf);
+    typedef Eigen::MatrixXf (*pfmatrix)(Eigen::VectorXf, Eigen::VectorXf);
     typedef float (*pfbound)(float* params, 
                              Eigen::VectorXf & position, 
                              Eigen::VectorXf & exitpoint,
                              Eigen::VectorXf & normal);
     typedef bool (*pfstop)(Eigen::MatrixXf);
-
     private:
-        
-        //LookAtTable stores the LookAtTable of those functions that are not defined analytically
-        std::map<std::string, LookUpTable> bvplat;
+
+        std::map<std::string, bool> control;
 
     public:
 
         //Functions whose image is scalar s.t. c(X), f(X), u(X), varphi(X)
-        pfscalar f,c, u, varphi;
+        ScalarFunction f,c, u, varphi;
 
         //Functions whose image is a vector s.t b(X), F(x), g(X), psi(X)
-        pfvector F, mu, b, psi;
+        VectorFunction F, mu, b, psi;
 
         //sigma is the /sigma matrix
-        pfmatrix sigma;
+        MatrixFunction sigma;
         
         //The boundary is stored in surf
         Boundary bound;
@@ -60,9 +58,4 @@ class BVP
         void Surf_init(std::string boundary , pfstop stopf);
 
 };
-
-//Default functions which always return 0.0f
-float Default_Scalar(Eigen::VectorXf X);
-Eigen::VectorXf Default_Vector(Eigen::VectorXf X);
-Eigen::MatrixXf Default_Matrix(Eigen::VectorXf X);
 #endif

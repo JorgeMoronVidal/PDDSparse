@@ -6,7 +6,7 @@
 #include <eigen3/Eigen/Core>
 #include "lookuptable.hpp"
 
-/*This class takes care of the */
+/*This class takes care of the scalar functions in BVP*/
 class ScalarFunction{
 
     typedef float (*pfscalar)(Eigen::VectorXf , Eigen::VectorXf);
@@ -38,18 +38,21 @@ class ScalarFunction{
         /*
         Initialization of the object with the lut where
         The values of the function are stored
+        dim has to be an unsigned integer
         input has to be a std::string
         */
-        void Init(std::string input);
+        void Init(unsigned int dim, 
+                  std::string input);
 
         /*
         Returns the value of the function in X with
         normal vector N.
         Inputs: std::EigenvectorXf, std::EigenvectorXf
         */
-        float Value(Eigen::VectorXf position, Eigen::VectorXf normal);
+        inline float Value(Eigen::VectorXf position, 
+                    Eigen::VectorXf normal);
 };  
-#endif 
-
 //Default function which always returns  0.0f
 float Default_Scalar(Eigen::VectorXf X, Eigen::VectorXf N);
+#endif 
+

@@ -13,6 +13,7 @@ void ScalarFunction::Init(pfscalar input){
 void ScalarFunction::Init(unsigned int dim, 
                           std::string input){
     lookuptable.Init(dim, input);
+    analytic = false;
 }
 
 inline float ScalarFunction::Value(Eigen::VectorXf position, 
@@ -22,5 +23,9 @@ inline float ScalarFunction::Value(Eigen::VectorXf position,
     }
 
     return lookuptable.Eval(position);
+}
+
+float Default_Scalar(Eigen::VectorXf X, Eigen::VectorXf N){
+    return 0.0f;
 }
 
