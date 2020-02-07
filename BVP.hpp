@@ -42,7 +42,7 @@ class BVP
         MatrixFunction sigma;
         
         //The boundary is stored in surf
-        Boundary bound;
+        Boundary boundary;
 
         //All the entries of the maps are set as Default. bvplat remains empty
         BVP(void);
@@ -54,9 +54,18 @@ class BVP
                     std::map<std::string, pfmatrix> sigma,
                     std::map<std::string, std::string> map_lut);
 
-        //Initialization of the surface variable
-        void Surf_init(pfbound boundary, pfstop stopf);
-        void Surf_init(std::string boundary , pfstop stopf);
+        /*Initialization of the surface variable with analytic boundary
+        -boundary is a function s.t. (*float)(float* params, Eigen::VectorXf & position, 
+                             Eigen::VectorXf & exitpoint, Eigen::VectorXf & normal)
+        -stopf is a function s.t. (*pfstop)(Eigen::MatrixXf)
+        */
+        void Boundary_init(pfbound boundary, pfstop stopf);
+        
+        /*Initialization of the surface variable with analytic boundary
+        -boundary is the directory where the lup of the distance is storedAh per
+        -stopf is a function s.t. (*pfstop)(Eigen::MatrixXf)
+        */
+        void Boundary_init(std::string boundary , pfstop stopf);
 
 };
 #endif

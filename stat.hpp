@@ -26,7 +26,6 @@ struct Stat {
     -varxi is the variance of the control variable.
     -crossum is the sum of xi*result
     */
-
     float summ, sq_summ, var, std,
     summ_0, sq_summ0, summ_xi, sqsumm_xi,
     var_xi, crosssumm, covar;
@@ -37,11 +36,16 @@ struct Stat {
     -summN stores the summ of counterN for various trayectories
     */
     int  counter, counterN, summN;
+
+    /*
+    -Initialization of the structure.
+    */
     Stat(void);
     
     /*Returns the average of the solutions for the trayectories computed
       and updates all the Stat quantities*/
     float update(Eigen::VectorXf X, float Y, float Z, float xi, int N);
+    
     /*Fast version of update where some quantities of Stat are not upgraded*/
     float fast_update(Eigen::VectorXf X, float Y, float Z, float xi);
 

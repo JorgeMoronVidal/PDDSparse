@@ -46,7 +46,7 @@ void BVP::BVP_init(int dim,
 
         }
         control[it->first] = true;
-        std::cout << it->first << " was defined as an analytic function.";
+        std::cout << it->first << " was defined as an analytic function.\n";
     } 
 
     
@@ -73,7 +73,7 @@ void BVP::BVP_init(int dim,
         }
 
         control[it->first] = true;
-        std::cout << it->first << " was defined as an analytic function.";
+        std::cout << it->first << " was defined as an analytic function. \n";
 
 
     }
@@ -85,7 +85,7 @@ void BVP::BVP_init(int dim,
             sigma.Init(it->second);
         }
 
-        std::cout << it->first << " was defined as an analytic function.";
+        std::cout << it->first << " was defined as an analytic function. \n";
     }
 
     for(std::map<std::string,std::string>::iterator it = map_lut.begin();
@@ -133,7 +133,7 @@ void BVP::BVP_init(int dim,
                 }
         }
 
-        std::cout << it->first << " was defined as an interpolated look up table.";
+        std::cout << it->first << " was defined as an interpolated look up table.\n";
     }
 
     for(std::map<std::string,bool>::iterator it = control.begin();
@@ -141,18 +141,18 @@ void BVP::BVP_init(int dim,
         it ++){
 
         if(!it->second){
-            std::cout<< "Function " << it->first << "of the BVP wasn't defined.";
+            std::cout<< "Function " << it->first << "of the BVP wasn't defined.\n";
         }
     }
 
 }
 
-void BVP::Surf_init(pfbound boundary, pfstop stopf)
+void BVP::Boundary_init(pfbound bound, pfstop stopf)
 {
-
+    boundary._init_(bound, stopf);
 }
 
-void BVP::Surf_init(std::string boundary , pfstop stopf)
+void BVP::Boundary_init(std::string bound , pfstop stopf)
 {
-
+    boundary._init_(bound, stopf);
 }

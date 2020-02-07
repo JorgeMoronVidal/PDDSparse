@@ -9,7 +9,7 @@
 /*Boundary is a class which stores the boundary-related functions*/
 class Boundary{
 
-    typedef float (*pfbound)(float*, Eigen::VectorXf &, Eigen::VectorXf &);
+    typedef float (*pfbound)(float*, Eigen::VectorXf &, Eigen::VectorXf &, Eigen::VectorXf &);
     typedef bool (*pfstop)(Eigen::MatrixXf);
 
     private:
