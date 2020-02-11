@@ -42,7 +42,7 @@ class VectorFunction{
         dim has to be an unsigned integer
         input has to be a std::string
         */
-        void Init(unsigned int dim, 
+        void Init(int dim, 
                   std::string input);
 
         /*

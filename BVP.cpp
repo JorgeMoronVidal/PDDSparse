@@ -152,7 +152,7 @@ void BVP::Boundary_init(pfbound bound, pfstop stopf)
     boundary._init_(bound, stopf);
 }
 
-void BVP::Boundary_init(std::string bound , pfstop stopf)
+void BVP::Boundary_init(int dim, std::string bound , pfstop stopf)
 {
-    boundary._init_(bound, stopf);
+    boundary._init_(dim, bound, stopf);
 }

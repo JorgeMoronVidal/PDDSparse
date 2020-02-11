@@ -62,10 +62,11 @@ class BVP
         void Boundary_init(pfbound boundary, pfstop stopf);
         
         /*Initialization of the surface variable with analytic boundary
+        -dim is the dimension of the problem
         -boundary is the directory where the lup of the distance is storedAh per
         -stopf is a function s.t. (*pfstop)(Eigen::MatrixXf)
         */
-        void Boundary_init(std::string boundary , pfstop stopf);
+        void Boundary_init(int dim, std::string boundary , pfstop stopf);
 
 };
 #endif

@@ -13,7 +13,7 @@ void MatrixFunction::Init(pfmatrix input){
 
 }
 
-void MatrixFunction::Init(unsigned int dim, 
+void MatrixFunction::Init(int dim, 
                           std::string input){
     std::string aux;
     lookuptable.resize(dim);

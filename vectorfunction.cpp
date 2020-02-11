@@ -10,7 +10,7 @@ void VectorFunction::Init(pfvector input){
     analytic = true;
 }
 
-void VectorFunction::Init(unsigned int dim, 
+void VectorFunction::Init(int dim, 
                           std::string input){
     std::string aux;
     lookuptable.resize(dim);

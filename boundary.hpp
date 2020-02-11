@@ -34,16 +34,16 @@ class Boundary{
         Boundary(void);
 
         //Initialization with Analytic Distance function
-        void _init_(pfbound, pfstop);
+        void _init_(pfbound fbound, pfstop fstop);
 
         //Initialization Distance stored in a look up table
-        void _init_(std::string, pfstop);
+        void _init_(int dim, std::string lupbound, pfstop fstop);
 
         /*-Returns distance to the boundary (Negative if inside, positive if outside)
           -Modifies the normal vector
           -Modifies exitpoint
           -If outside, particle is placed on the boundary again*/
-        float dist(float* params, 
+        float Dist(float* params, 
                    Eigen::VectorXf & position, 
                    Eigen::VectorXf & exitpoint,
                    Eigen::VectorXf & normal);
