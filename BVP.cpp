@@ -6,6 +6,7 @@ BVP::BVP(void){
     control["f"] = false;
     control["c"] = false;
     control["u"] = false;
+    control["g"] = false;
     control["varphi"] = false;
     control["F"] = false;
     control["mu"] = false;

@@ -10,7 +10,7 @@
 class Boundary{
 
     typedef float (*pfbound)(float*, Eigen::VectorXf &, Eigen::VectorXf &, Eigen::VectorXf &);
-    typedef bool (*pfstop)(Eigen::MatrixXf);
+    typedef bool (*pfstop)(Eigen::VectorXf);
 
     private:
 
