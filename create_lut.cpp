@@ -118,7 +118,6 @@ int main() {
                 file_val.close();
             }
             
-
         }
 
 
