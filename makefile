@@ -28,7 +28,7 @@ LFLAGS = -L/usr/local/lib
 LIBS = -lgsl -lgslcblas -lm
 
 # define the source files, default here is main.cpp
-SRCS = main.cpp BVP.cpp scalarfunction.cpp vectorfunction.cpp matrixfunction.cpp boundary.cpp lookuptable.cpp equation.cpp rectangle.cpp
+SRCS = create_lut.cpp BVP.cpp scalarfunction.cpp vectorfunction.cpp matrixfunction.cpp boundary.cpp lookuptable.cpp equation.cpp rectangle.cpp
 
 # define the object files 
 #
@@ -41,7 +41,7 @@ SRCS = main.cpp BVP.cpp scalarfunction.cpp vectorfunction.cpp matrixfunction.cpp
 OBJS = $(SRCS:.c=.o)
 
 # define the executable file  name
-MAIN = main
+MAIN = create_lut
 
 #
 # The following part of the makefile is generic; it can be used to 

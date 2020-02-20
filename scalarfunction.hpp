@@ -49,7 +49,7 @@ class ScalarFunction{
         normal vector N.
         Inputs: std::EigenvectorXf, std::EigenvectorXf
         */
-        inline float Value(Eigen::VectorXf position, 
+        float Value(Eigen::VectorXf position, 
                     Eigen::VectorXf normal);
 };  
 //Default function which always returns  0.0f

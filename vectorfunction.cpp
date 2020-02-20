@@ -17,6 +17,7 @@ void VectorFunction::Init(int dim,
     for(int i = 0; i < dim; i++){
         aux = input + "/" + std::to_string(i) +"_component";
         lookuptable[i].Init(dim, aux);
+        aux.clear();
     }
     analytic = false;
 }

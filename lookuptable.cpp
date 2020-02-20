@@ -13,7 +13,7 @@ void LookUpTable::Init(int dim, std::string file){
     int  count = 0;
     std::ifstream infile;
     std::string aux,line;
-
+    
     for(int i = 0; i < dim; i++){
         //We charge the grid coordinates
         aux = file + "/x_" + std::to_string(i) + ".txt";
@@ -35,12 +35,13 @@ void LookUpTable::Init(int dim, std::string file){
         infile.clear();
         infile.seekg(0, std::ios::beg);
         while (getline( infile, line )){
-            x[i][count] = stod(line);
+            x[i][count] = std::stod(line);
             count++;
         }
         count = 0;
         infile.close();
     }
+    
     //The file which stores the values of the function in the grid is open
     infile.open(file + "/value.txt");
     if(! infile){
@@ -50,7 +51,7 @@ void LookUpTable::Init(int dim, std::string file){
     }
     std::string cent;
     std::string::iterator it;
-
+    
     int counter[dim];
     int mesh_size = 1;
     for (int i = 0; i < dim; i++){
@@ -60,6 +61,7 @@ void LookUpTable::Init(int dim, std::string file){
     //It's values are stored in z
     z = new double[mesh_size];
     while (getline( infile, line )){
+        
         it = line.begin();
         do{
             while(*it == ' '){
@@ -73,13 +75,14 @@ void LookUpTable::Init(int dim, std::string file){
                 cent += *it;
 
             }
-            z[counter[1] * len[0] + counter[0]] = stod(cent);
-            cent.clear();
+            z[counter[1] * len[0] + counter[0]] = std::stod(cent);
             counter[0]++;
+            cent.clear();
             } while(it != line.end());
 
         counter[1]++;//row number
         counter[0] = 0;//column number
+        
     }
     //Then the spline is initialized
     infile.close();

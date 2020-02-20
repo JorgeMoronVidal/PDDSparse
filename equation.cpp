@@ -46,8 +46,8 @@ Eigen::MatrixXf Equation_sigma(Eigen::VectorXf X, Eigen::VectorXf N){
 }
 float Equation_u(Eigen::VectorXf X, Eigen::VectorXf N){
     float aux = 0.0f;
-    for(int i = 0.0f; i < 200.0f; i ++){
-        for(int j = 0.0f; j < 200.0f; j++){
+    for(int i = 0.0f; i < 50.0f; i ++){
+        for(int j = 0.0f; j < 50.0f; j++){
             aux += pow(-1.0f,(float)i+j)*cos((2.0f*i+1.0f)*0.5*M_PI*X(0))*cos((2.0f*j+1.0f)*0.5*M_PI*X(1))*
             (1.0f/((2.0f*i+1.0f)*(2.0f*j+1.0f)*((2.0f*i+1)*(2.0f*i+1)+(2.0f*j+1)*(2.0f*j+1))));
         }

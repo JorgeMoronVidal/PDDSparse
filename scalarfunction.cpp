@@ -16,7 +16,7 @@ void ScalarFunction::Init(unsigned int dim,
     analytic = false;
 }
 
-inline float ScalarFunction::Value(Eigen::VectorXf position, 
+float ScalarFunction::Value(Eigen::VectorXf position, 
                             Eigen::VectorXf normal){
     if(analytic){
         return function(position, normal);

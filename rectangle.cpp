@@ -33,10 +33,12 @@ float Rectangle2D(float* params,
                 }
             }  else {
                 //Is outside
+
                 if(distances[0] > halfside[0]){
 
                     if(distances[1] > halfside[1]){
                         //It's closer to the first quadrant corner
+                        
                         r = sqrt((distances[0]-halfside[0])*(distances[0]-halfside[0])+ 
                         (distances[1]-halfside[1])*(distances[1]-halfside[1]));
                         exitpoint(0) = halfside[0] + center[0];

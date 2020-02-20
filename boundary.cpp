@@ -13,10 +13,9 @@ void Boundary::_init_(pfbound fbound, pfstop fstop){
 }
 
 void Boundary::_init_(int dim, std::string lupbound, pfstop fstop){
-
     Distance_Numeric.Init(dim, lupbound);
     stop = fstop;
-    analytic = true;
+    analytic = false;
 }
 
 float Boundary::Dist(float* params, 
