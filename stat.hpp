@@ -27,8 +27,8 @@ struct Stat {
     -crossum is the sum of xi*result
     */
     float summ, sq_summ, var, std,
-    summ_0, sq_summ0, summ_xi, sqsumm_xi,
-    var_xi, crosssumm, covar;
+          summ_0, sq_summ0, summ_xi, sqsumm_xi,
+          var_xi, crossumm, covar;
 
     /*
     -counter stores the total number of trayectories computed.
@@ -44,10 +44,10 @@ struct Stat {
     
     /*Returns the average of the solutions for the trayectories computed
       and updates all the Stat quantities*/
-    float update(Eigen::VectorXf X, float Y, float Z, float xi, int N);
+    float Update_FKAK(Eigen::VectorXf X, float Y, float Z, float xi, int N);
     
     /*Fast version of update where some quantities of Stat are not upgraded*/
-    float fast_update(Eigen::VectorXf X, float Y, float Z, float xi);
+    float Fast_update(Eigen::VectorXf X, float Y, float Z, float xi);
 
 };  
 #endif

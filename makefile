@@ -9,7 +9,7 @@
 #
 
 # define the C/C++ compiler to use
-CC = g++
+CC = mpic++
 
 # define compile-time flags NOTE: last two flags required for C++ 11 spec on osx
 CFLAGS = -g -Wall
@@ -28,7 +28,7 @@ LFLAGS = -L/usr/local/lib
 LIBS = -lgsl -lgslcblas -lm
 
 # define the source files, default here is main.cpp
-SRCS = create_lut.cpp BVP.cpp scalarfunction.cpp vectorfunction.cpp matrixfunction.cpp boundary.cpp lookuptable.cpp equation.cpp rectangle.cpp
+SRCS = main.cpp BVP.cpp scalarfunction.cpp vectorfunction.cpp matrixfunction.cpp boundary.cpp lookuptable.cpp equation.cpp rectangle.cpp
 
 # define the object files 
 #
@@ -41,7 +41,7 @@ SRCS = create_lut.cpp BVP.cpp scalarfunction.cpp vectorfunction.cpp matrixfuncti
 OBJS = $(SRCS:.c=.o)
 
 # define the executable file  name
-MAIN = create_lut
+MAIN = main
 
 #
 # The following part of the makefile is generic; it can be used to 
