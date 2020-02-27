@@ -12,6 +12,7 @@ void Node::init (Eigen::VectorXf X_init,
                  unsigned int random_seed){
 
     x0 = X_init;
+    generate = false;
     X.resize(x0.size());
     N.resize(x0.size());
     tolerance = tol;
@@ -21,7 +22,7 @@ void Node::init (Eigen::VectorXf X_init,
 }
 
 
-void Node::Solve_FKAK(BVP bvp){
+void Node::Solve_FKAK(BVP bvp, float* params){
 
     /*
     -sum is the sum of the solutions computed 
@@ -41,8 +42,9 @@ void Node::Solve_FKAK(BVP bvp){
     -crossum is the sum of xi*result
     */
 
-    float sol = 0.0f, summ = 0.0f, sq_summ = 0.0f, summ_0 = 0.0f, sq_summ0 = 0.0f,
-          xi = 0.0f, summ_xi = 0.0f, sqsumm_xi = 0.0f, var_xi = 0.0f, crossumm = 0.0f;
+    float mean = 0.0f, sol_0 = 0.0f, summ = 0.0f, sqsumm = 0.0f, summ_0 = 0.0f, sqsumm_0 = 0.0f,
+          xi = 0.0f, summ_xi = 0.0f, sqsumm_xi = 0.0f, var_xi = 0.0f, crossumm = 0.0f,
+          sqh = sqrt(h);
         
     /*
     -counter stores the total number of trayectories computed.
@@ -50,26 +52,76 @@ void Node::Solve_FKAK(BVP bvp){
     -summN stores the summ of counterN for various trayectories
     */
 
-    int  counter, counterN, summN;
+    int  counter = 0, counterN = 0, summN = 0;
 
     //random number generator
     thread_local std::mt19937 i_random(seed);
     Eigen::VectorXf increment;
     increment.resize(X.size());
 
-    for(int i = 0; i < 1000; i++){
-            for(int j = 0; j < increment.size(); j++) increment(j) = Random_Normal(i_random());
-            xi+= Y*(bvp.sigma(X,t).transpose()*F(X,t)).dot(bmotion.increment);
-            Z += f(X,t)*Y*bmotion.dt;
-            Y += c(X, t)*Y*bmotion.dt + Y*mu(X,t).transpose()*bmotion.increment;
-            X += (b(X,t) - sigma(X,t)*mu(X,t))*bmotion.dt + sigma(X,t)*bmotion.increment;
-            t += bmotion.dt;
-            counterN++;
-    }
-    
-}
+    Eigen::MatrixXf sigma;
+    Eigen::VectorXf mu;
 
-float Node::Random_Normal(int random_int){
+    for(int i = 0; i < 1000; i++){
+
+        xi = 0.0f;
+        X = x0;
+        Y = 1.0f;
+        Z = 0.0f;
+
+        do{
+            sigma = bvp.sigma.Value(X,N);
+            mu = bvp.mu.Value(X,N);
+            for(int j = 0; j < increment.size(); j++) increment(j) = Random_Normal(i_random) * sqh;
+            xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
+            Z += bvp.f.Value(X,N)*Y*h;
+            Y += bvp.c.Value(X, N)*Y*h + Y*bvp.mu.Value(X,N).transpose()*increment;
+            X += (bvp.b.Value(X,N) - sigma*mu)*h + sigma*increment;
+            counterN++;
+    }while(bvp.boundary.Dist(params, X, E_P,N) < 0.0f);
+    X = E_P;
+    sol_0 = Y*bvp.g.Value(X,N)+Z;
+    Update_Stat(sol_0,xi, summ, mean, sqsumm, summ_0, sqsumm_0, summ_xi,
+    sqsumm_xi, var_xi, crossumm, counter, counterN, summN);
+    }
+
+    do{
+
+        xi = 0.0f;
+        X = x0;
+        Y = 1.0f;
+        Z = 0.0f;
+
+        do{
+            sigma = bvp.sigma.Value(X,N);
+            mu = bvp.mu.Value(X,N);
+
+            for(int j = 0; j < increment.size(); j++) increment(j) = Random_Normal(i_random) * sqh;
+
+            xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
+            Z += bvp.f.Value(X,N)*Y*h;
+            Y += bvp.c.Value(X, N)*Y*h + Y*bvp.mu.Value(X,N).transpose()*increment;
+            X += (bvp.b.Value(X,N) - sigma*mu)*h + sigma*increment;
+            counterN++;
+        
+    }while(bvp.boundary.Dist(params, X, E_P,N) < 0.0f);
+    X = E_P;
+    sol_0 = Y*bvp.g.Value(X,N)+Z;
+    Update_Stat(sol_0,xi, summ, mean, sqsumm, summ_0, sqsumm_0, summ_xi,
+    sqsumm_xi, var_xi, crossumm, counter, counterN, summN);
+
+    //std::cout << std*2.0f/mean << "\n";
+    }while(std*2.0f/mean > tolerance*fabs(mean-bvp.u.Value(X,N)));
+
+    float aux = 1.0f/counter;
+    covar =  (crossumm - summ_0*summ_xi*aux)*aux;
+    var_xi = sqsumm_xi*aux - summ_xi*summ_xi*aux*aux;
+    pearson_c = covar/sqrt((sqsumm_0*aux - (summ-summ_xi)*
+    (summ-summ_xi)*aux*aux)*var_xi);
+    solution = mean;
+
+}
+float Node::Random_Normal(std::mt19937 & random_int){
     if(generate) {
 
         generate = false;
@@ -80,9 +132,9 @@ float Node::Random_Normal(int random_int){
 
         do {
 
-            u = ((float)random_int/max_mt) * 2.0 - 1.0;
+            u = ((float)random_int()/max_mt) * 2.0f - 1.0f;
 
-            v = ((float)random_int/max_mt) * 2.0 - 1.0;
+            v = ((float)random_int()/max_mt) * 2.0f - 1.0f;
 
             s = u * u + v * v;
 
@@ -94,19 +146,19 @@ float Node::Random_Normal(int random_int){
 
         generate = true;
 
-        return (float)(u * s);
+        return (u * s);
 
     }
 
 }
 
-void Update_Stat(float sol_0, float xi, float & summ, float & mean,
-                 float & sqsumm, float & var, float & std, float & summ_0, 
+void Node::Update_Stat(float sol_0, float xi, float & summ, float & mean,
+                 float & sqsumm,  float & summ_0, 
                  float & sqsumm_0, float & summ_xi, float & sqsumm_xi, 
                  float & var_xi, float & crossumm, int & counter, int & counterN, 
                  int & summN){
 
-    float sol = sol + xi;
+    float sol = sol_0 + xi;
     summ += sol;
     sqsumm += sol*sol;
     summ_0 += sol_0;

@@ -13,7 +13,7 @@ class Node{
 
     private:
         //x0 stores the point where the solution is going to be computed 
-        Eigen::VectorXf x0,X, N, E_P;
+        Eigen::VectorXf X, N, E_P;
         float Y,Z;
         unsigned int seed;
         /*Those  variables are used by the normal random number generator 
@@ -30,8 +30,9 @@ class Node{
         -std is the standard deviation of the result
         -covar is the covariance between xi and the solution 
     */
+   Eigen::VectorXf x0;
     float h, solution, tolerance,   
-          var, std, covar;
+          var, std, covar,pearson_c;
     //Solved indicates if the solution for the node has been computed
     bool solved;
     //Initialization of the class
@@ -42,16 +43,16 @@ class Node{
                unsigned int random_seed);
     
     //Obtains node solution using Feynmann Kak Formula
-    void Solve_FKAK(BVP bvp);
+    void Solve_FKAK(BVP bvp, float * params);
 
     //Obtains node solution for the Meshless Algorithm
     void Solve_PDDSparse(BVP bvp);
 
     //Updates the statistical variables
     void Update_Stat(float sol_0, float xi, float & summ, float & mean,
-                 float & sqsumm, float & var, float & std, float & summ_0, 
+                 float & sqsumm, float & summ_0, 
                  float & sqsumm_0, float & summ_xi, float & sqsumm_xi, 
-                 float & var_xi, float & crossumm, int & counter, int counterN, 
+                 float & var_xi, float & crossumm, int & counter, int & counterN, 
                  int & summN);
 
     //Draws a trayectory of the brownian path
@@ -61,6 +62,6 @@ class Node{
     void Print_Result(void);
 
     //Turns a uniform random number distribution into a normal one with avg = 0 and var = 1
-    float Random_Normal(int random_int);
+    float Random_Normal(std::mt19937 & random_int);
 };
 #endif

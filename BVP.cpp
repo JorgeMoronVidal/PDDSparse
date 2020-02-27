@@ -45,6 +45,10 @@ void BVP::BVP_init(int dim,
 
             varphi.Init(it->second);
 
+        } else if (it->first == "g"){
+
+            g.Init(it->second);
+
         }
         control[it->first] = true;
         std::cout << it->first << " was defined as an analytic function.\n";
@@ -110,6 +114,10 @@ void BVP::BVP_init(int dim,
                 }else if (it->first == "varphi"){
 
                     varphi.Init(dim, it->second);
+
+                }else if (it->first == "g"){
+
+                    g.Init(dim, it->second);
 
                 }else if(it->first == "F"){
 

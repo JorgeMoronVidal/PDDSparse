@@ -55,9 +55,6 @@ Eigen::MatrixXf MatrixFunction::Value(Eigen::VectorXf position,
 }
 
 Eigen::MatrixXf Default_Matrix(Eigen::VectorXf position, Eigen::VectorXf normal){
-
-    Eigen::MatrixXf out;
-    out.resize(position.size(), position.size());
     
-    return out;
+    return Eigen::MatrixXf::Zero(position.size(), position.size());
 }

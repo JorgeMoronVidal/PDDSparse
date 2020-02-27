@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 #include <eigen3/Eigen/Core>
 #include "lookuptable.hpp"
 /*Boundary is a class which stores the boundary-related functions*/
@@ -30,6 +31,7 @@ class Boundary{
         bool analytic;
 
     public:
+    
         //Initialization by default
         Boundary(void);
 

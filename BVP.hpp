@@ -33,7 +33,7 @@ class BVP
     public:
 
         //Functions whose image is scalar s.t. c(X), f(X), u(X), varphi(X)
-        ScalarFunction f,c, u, varphi;
+        ScalarFunction f,c, u, varphi, g;
 
         //Functions whose image is a vector s.t b(X), F(x), g(X), psi(X)
         VectorFunction F, mu, b, psi;

@@ -38,7 +38,7 @@ Eigen::VectorXf VectorFunction::Value(Eigen::VectorXf position,
 }
 
 Eigen::VectorXf Default_Vector(Eigen::VectorXf position, Eigen::VectorXf normal){
-    Eigen::VectorXf out;
-    out.resize(position.size());
-    return out;
+
+    return Eigen::VectorXf::Zero(position.size());
+    
 }
