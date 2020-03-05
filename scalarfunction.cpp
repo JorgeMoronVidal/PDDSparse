@@ -28,4 +28,3 @@ float ScalarFunction::Value(Eigen::VectorXf position,
 float Default_Scalar(Eigen::VectorXf X, Eigen::VectorXf N){
     return 0.0f;
 }
-

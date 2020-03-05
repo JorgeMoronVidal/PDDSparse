@@ -58,7 +58,7 @@ int main() {
     MPI_Get_processor_name(processor_name, &name_len);
 
     // Print off a hello world message
-    printf("Hello world from processor %s, rank %d out of %d processors\n",
+    printf("Hello world from processor %s, rank %d out of %d\n",
            processor_name, world_rank, world_size);
     node_array[world_rank].Solve_FKAK(bvp, params);
     printf("Numerical solution of node %d at position (%f, %f) is: %f +/- %f \n Analytical solution is %f \n", 

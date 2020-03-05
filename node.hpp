@@ -30,11 +30,17 @@ class Node{
         -std is the standard deviation of the result
         -covar is the covariance between xi and the solution 
     */
-   Eigen::VectorXf x0;
+    Eigen::VectorXf x0;
     float h, solution, tolerance,   
           var, std, covar,pearson_c;
     //Solved indicates if the solution for the node has been computed
     bool solved;
+    /*
+    -Subdomain.
+    -i.
+    */
+    int index, interface;
+    std::vector<int> subdomains;
     //Initialization of the class
     Node(void);
     void init (Eigen::VectorXf X_init, 
@@ -46,7 +52,7 @@ class Node{
     void Solve_FKAK(BVP bvp, float * params);
 
     //Obtains node solution for the Meshless Algorithm
-    void Solve_PDDSparse(BVP bvp);
+    void Solve_PDDSparse(BVP bvp, float * params);
 
     //Updates the statistical variables
     void Update_Stat(float sol_0, float xi, float & summ, float & mean,
