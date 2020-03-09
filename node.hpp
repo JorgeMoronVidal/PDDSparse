@@ -1,5 +1,6 @@
 #ifndef NODE
 #define NODE
+#define EIGEN_SPARSEVECTOR_PLUGIN
 //If we want to debug our code
 #define DEBUG
 #include <iostream>
@@ -7,8 +8,10 @@
 #include <random>
 #include <thread>
 #include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Sparse>
 #include "lookuptable.hpp"
 #include "BVP.hpp"
+
 class Node{
 
     private:
@@ -21,6 +24,7 @@ class Node{
         float spare, u, v, s;
 	    bool generate;  
         const unsigned int max_mt = std::mt19937::max();
+
     public:
     /*  -h stores the value of the time discretization
         -solution stores the value of the solution in x0
@@ -37,29 +41,49 @@ class Node{
     bool solved;
     /*
     -Subdomain.
-    -i.
+    -i_node stores the index of the node
+    -i_interface stores the index of the interface which stores the node0
     */
-    int index, interface;
+    int i_node;
+    std::vector<int> i_interface;
     std::vector<int> subdomains;
+
+
+    //i_node row of the inverted Psi matrix
+    Eigen::SparseMatrix<float> psim_i;
+
     //Initialization of the class
     Node(void);
     void init (Eigen::VectorXf X_init, 
                float tol, 
                float discrezitation, 
                unsigned int random_seed);
-    
-    //Obtains node solution using Feynmann Kak Formula
+
+    void init (Eigen::VectorXf X_init, 
+               Eigen::MatrixXf H_mtrx,
+               float tol, 
+               float discretization, 
+               unsigned int random_seed,
+               int node_index,
+               std::vector<int> interface_index,
+               std::vector<int> subdomains,
+               Eigen::SparseMatrix<float> psi_m );
+
+    //G using Feynmann Kak Formula
     void Solve_FKAK(BVP bvp, float * params);
-
-    //Obtains node solution for the Meshless Algorithm
-    void Solve_PDDSparse(BVP bvp, float * params);
-
     //Updates the statistical variables
     void Update_Stat(float sol_0, float xi, float & summ, float & mean,
                  float & sqsumm, float & summ_0, 
                  float & sqsumm_0, float & summ_xi, float & sqsumm_xi, 
                  float & var_xi, float & crossumm, int & counter, int & counterN, 
                  int & summN);
+
+    //Obtains i_node row of the G matrix for the Meshless Algorithm
+    Eigen::SparseMatrix<float> Solve_PDDSparse(BVP bvp, float * params);
+
+    //It returns a row of the Hij matrix
+    Eigen::SparseMatrix<float>  H_Update(std::vector<Eigen::VectorXf>,
+                                         std::vector<int>);
 
     //Draws a trayectory of the brownian path
     void Draw_trayectory(void);

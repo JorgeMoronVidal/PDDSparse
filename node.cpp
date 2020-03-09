@@ -3,9 +3,9 @@ Node::Node(void){
 
     Y = 1;
     Z = 0;
-    
 
 }
+
 void Node::init (Eigen::VectorXf X_init, 
                  float tol, 
                  float discretization, 
@@ -18,6 +18,28 @@ void Node::init (Eigen::VectorXf X_init,
     tolerance = tol;
     h = discretization;
     seed = random_seed;
+
+}
+
+void Node::init (Eigen::VectorXf X_init, 
+                Eigen::MatrixXf H_mtrx,
+                float tol, 
+                float discretization, 
+                unsigned int random_seed,
+                int node_index,
+                std::vector<int> interface_index,
+                std::vector<int> subdomains){
+
+    x0 = X_init;
+    generate = false;
+    X.resize(x0.size());
+    N.resize(x0.size());
+    tolerance = tol;
+    h = discretization;
+    seed = random_seed;
+    H = H_mtrx;
+    i_node = node_index;
+    i_interface = interface_index;
 
 }
 

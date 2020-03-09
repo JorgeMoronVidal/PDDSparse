@@ -15,6 +15,7 @@ BVP::BVP(void){
     control["sigma"] = false;
     control["boundary"] = false;
     control["stopf"] = false;
+    control["RBF"] = false;
 }
 
 void BVP::BVP_init(int dim,
@@ -155,9 +156,21 @@ void BVP::BVP_init(int dim,
             std::cout<< "Function " << it->first << " of the BVP wasn't defined.\n";
         }
     }
-
 }
 
+void BVP::BVP_init(int dim,
+              std::map<std::string, pfscalar> map_fscalar,
+              std::map<std::string, pfvector> map_fvector,
+              std::map<std::string, pfmatrix> sigma,
+              std::map<std::string, std::string> map_lut,
+              pRBF rbfunc){
+
+    BVP_init(dim, map_fscalar, map_fvector, sigma, map_lut);
+    rbf.Init(rbfunc);
+    control["RBF"] = true;
+    std::cout <<"RBF was defined as an analytic function"<< '\n';
+
+}
 void BVP::Boundary_init(pfbound bound, pfstop stopf)
 {   
     control["boundary"] = true;
