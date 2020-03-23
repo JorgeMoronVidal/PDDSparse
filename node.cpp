@@ -22,13 +22,14 @@ void Node::init (Eigen::VectorXf X_init,
 }
 
 void Node::init (Eigen::VectorXf X_init, 
-                Eigen::MatrixXf H_mtrx,
                 float tol, 
                 float discretization, 
                 unsigned int random_seed,
                 int node_index,
                 std::vector<int> interface_index,
-                std::vector<int> subdomains){
+                std::vector<int> subdomains,
+                Eigen::SparseMatrix<float> H_mtrx,
+                Eigen::SparseMatrix<float> psi_m){
 
     x0 = X_init;
     generate = false;

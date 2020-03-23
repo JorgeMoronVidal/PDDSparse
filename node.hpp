@@ -1,6 +1,6 @@
 #ifndef NODE
 #define NODE
-#define EIGEN_SPARSEVECTOR_PLUGIN
+//#define EIGEN_SPARSEVECTOR_PLUGIN
 //If we want to debug our code
 #define DEBUG
 #include <iostream>
@@ -50,7 +50,7 @@ class Node{
 
 
     //i_node row of the inverted Psi matrix
-    Eigen::SparseMatrix<float> psim_i;
+    Eigen::SparseMatrix<float> psim_i, H;
 
     //Initialization of the class
     Node(void);
@@ -60,13 +60,13 @@ class Node{
                unsigned int random_seed);
 
     void init (Eigen::VectorXf X_init, 
-               Eigen::MatrixXf H_mtrx,
                float tol, 
                float discretization, 
                unsigned int random_seed,
                int node_index,
                std::vector<int> interface_index,
-               std::vector<int> subdomains,
+               std::vector<int> subdomain,
+               Eigen::SparseMatrix<float> H_mtrx,
                Eigen::SparseMatrix<float> psi_m );
 
     //G using Feynmann Kak Formula
@@ -82,8 +82,9 @@ class Node{
     Eigen::SparseMatrix<float> Solve_PDDSparse(BVP bvp, float * params);
 
     //It returns a row of the Hij matrix
-    Eigen::SparseMatrix<float>  H_Update(std::vector<Eigen::VectorXf>,
-                                         std::vector<int>);
+    Eigen::SparseMatrix<float>  H_Update(pRBF rbf,
+                                         std::vector<Eigen::VectorXf> positions,
+                                         std::vector<int> index);
 
     //Draws a trayectory of the brownian path
     void Draw_trayectory(void);
