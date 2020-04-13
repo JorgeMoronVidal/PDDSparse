@@ -1,3 +1,6 @@
+#ifndef RECTANGLE
+#define RECTANGLE
+
 #include <math.h>
 #include <eigen3/Eigen/Core>
 #include <vector>
@@ -9,3 +12,5 @@ float Rectangle2D(float* params,
 
 
 bool Stopping(Eigen::VectorXf position);
+
+#endif

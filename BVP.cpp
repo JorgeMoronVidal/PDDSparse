@@ -52,7 +52,7 @@ void BVP::BVP_init(int dim,
 
         }
         control[it->first] = true;
-        std::cout << it->first << " was defined as an analytic function.\n";
+        //std::cout << it->first << " was defined as an analytic function.\n";
     } 
 
     
@@ -79,7 +79,7 @@ void BVP::BVP_init(int dim,
         }
 
         control[it->first] = true;
-        std::cout << it->first << " was defined as an analytic function. \n";
+        //std::cout << it->first << " was defined as an analytic function. \n";
 
 
     }
@@ -91,7 +91,7 @@ void BVP::BVP_init(int dim,
             sigma.Init(it->second);
         }
 
-        std::cout << it->first << " was defined as an analytic function. \n";
+        //std::cout << it->first << " was defined as an analytic function. \n";
     }
 
     for(std::map<std::string,std::string>::iterator it = map_lut.begin();
@@ -145,7 +145,7 @@ void BVP::BVP_init(int dim,
                 control[it->first] = true;
         }
 
-        std::cout << it->first << " was defined as an interpolated look up table.\n";
+        //std::cout << it->first << " was defined as an interpolated look up table.\n";
     }
 
     for(std::map<std::string,bool>::iterator it = control.begin();
@@ -153,7 +153,7 @@ void BVP::BVP_init(int dim,
         it ++){
 
         if(!it->second){
-            std::cout<< "Function " << it->first << " of the BVP wasn't defined.\n";
+            //std::cout<< "Function " << it->first << " of the BVP wasn't defined.\n";
         }
     }
 }
@@ -168,15 +168,15 @@ void BVP::BVP_init(int dim,
     BVP_init(dim, map_fscalar, map_fvector, sigma, map_lut);
     rbf.Init(rbfunc);
     control["RBF"] = true;
-    std::cout <<"RBF was defined as an analytic function"<< '\n';
+    //std::cout <<"RBF was defined as an analytic function"<< '\n';
 
 }
 void BVP::Boundary_init(pfbound bound, pfstop stopf)
 {   
     control["boundary"] = true;
     control["stopf"] = true;
-    std::cout << "Boundary was defined as an analytic function.\n";
-    std::cout << "Stopf was defined as an analytic function.\n";
+    //std::cout << "Boundary was defined as an analytic function.\n";
+    //std::cout << "Stopf was defined as an analytic function.\n";
     boundary._init_(bound, stopf);
 }
 
@@ -184,7 +184,7 @@ void BVP::Boundary_init(int dim, std::string bound , pfstop stopf)
 {   
     control["boundary"] = true;
     control["stopf"] = true;
-    std::cout << "Boundary was defined as an interpolated look up table.\n";
-    std::cout << "Stopf was defined as an interpolated look up table.\n";
+    //std::cout << "Boundary was defined as an interpolated look up table.\n";
+    //std::cout << "Stopf was defined as an interpolated look up table.\n";
     boundary._init_(dim, bound, stopf);
 }

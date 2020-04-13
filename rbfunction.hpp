@@ -4,7 +4,7 @@
 /*This class takes care of the RBP functions of the meshless interpolator*/
 class RBFunction{
 
-	typedef float (*pRBF)(Eigen::VectorXf , Eigen::VectorXf, float c);
+	typedef float (*pRBF)(Eigen::VectorXf , Eigen::VectorXf, float c2);
 
     private:
 
@@ -31,11 +31,11 @@ class RBFunction{
         */
         float Value(Eigen::VectorXf position, 
                     Eigen::VectorXf normal,
-                    float c);
+                    float c2);
 };  
 
 //Default function which always returns  0.0f
 float Default_RBF(Eigen::VectorXf x, 
                   Eigen::VectorXf x_i,
-                  float c);
+                  float c2);
 #endif

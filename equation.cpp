@@ -55,3 +55,8 @@ float Equation_u(Eigen::VectorXf X, Eigen::VectorXf N){
 
     return aux*128.0f/pow((double)M_PI,4.0);
 }
+
+float Equation_RBF(Eigen::VectorXf x , Eigen::VectorXf xj, float c2){
+    float r2 = pow(x(0)-xj(0),2) + pow(x(1)-xj(1),2);
+    return sqrt(r2 + c2);
+}

@@ -31,6 +31,10 @@ int main(){
 	for(int k = 0; k < 4; k++){
 		T_vec_b.push_back(T(k,0,1.0f));
 	}
+	Eigen::MatrixXf Matriz;
+	Matriz.resize(3,3);
+	Matriz(1,2) = 2;
+	Matriz(2,1) = 1;
 	H.setFromTriplets(T_vec_H.begin(),T_vec_H.end());
 	b.setFromTriplets(T_vec_b.begin(),T_vec_b.end());
 	Eigen::SparseLU<Eigen::SparseMatrix<float>> solver;

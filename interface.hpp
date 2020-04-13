@@ -8,7 +8,7 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Sparse>
 #include "node.hpp"
-#include "rectangle.hpp"
+#define DEBUG
 
 
 class Interface
@@ -23,10 +23,8 @@ class Interface
         bool interior;
         //0 if horizontal 1 if vertical
         int direction;
-        //Index Interface, column and row number of the stencil
-        std::vector<int> interface_index, subdomain_index, stencil_j;
-        //Positions of the stencil of the interface
-        std::vector<Eigen::VectorXf> stencil_position;
+        //Index Interface, subdomain index;
+        std::vector<int> interface_index, subdomain_index;
         //Parameters of the surface
         float params[4];
         /*The two coordinates that set the Sstd::vector<char> v;outh Est 
@@ -37,21 +35,34 @@ class Interface
         //Default initialization so we can define arrays of Interfaces
         Interface(void);
         //Proper initialization of the class
+
         void Init (Eigen::VectorXf start, 
                    Eigen::VectorXf end,
-                   std::vector<int> i_index,
-                   std::vector<int> subd_index,
-                   std::vector<int> n_index,
+                   std::vector<int>  i_index,
+                   std::vector<int>  n_index,
                    int direc,
-                   Eigen::SparseMatrix<float> Psim,
+                   std::vector< int > subd_index,
                    bool inter,
                    bool chebyshev,
-                   float tol,
+                   int N_Steps,
                    float discretization);
-        //Stencils are created 
-        void Set_Stencil(std::vector<Interface> Sten, float *parameters);
+
         //The nodes are solved
-        Eigen::SparseMatrix<float> Solve (BVP bvp);
+        void Solve(BVP bvp,
+                  gsl_rng *rng,
+                  float * parameters_stencil,
+                  float * parameters_surface,
+                  int N_tray,
+                  float c2,
+                  std::vector< std::vector<float> > & iPsi,
+                  std::vector< Eigen::VectorXf > & stencil_position,
+                  std::vector< int > & stencil_index,
+                  std::vector<float> & G,
+                  std::vector<float> & B,
+                  std::vector<int> & G_j,
+                  std::vector<int> & G_i,
+                  std::vector<int> & B_i);
+
         //Prints on screen interface atributes 
         void Print_Interface(void);
 
