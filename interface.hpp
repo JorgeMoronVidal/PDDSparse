@@ -8,6 +8,7 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Sparse>
 #include "node.hpp"
+#include "stencil.hpp"
 #define DEBUG
 
 
@@ -47,6 +48,16 @@ class Interface
                    int N_Steps,
                    float discretization);
 
+        void Init (std::vector<Eigen::VectorXf> node_pos,
+                   std::vector<int>  i_index,
+                   std::vector<int>  n_index,
+                   int direc,
+                   std::vector< int > subd_index,
+                   bool inter,
+                   bool chebyshev,
+                   int N_Steps,
+                   float discretization);
+
         //The nodes are solved
         void Solve(BVP bvp,
                   gsl_rng *rng,
@@ -63,6 +74,31 @@ class Interface
                   std::vector<int> & G_i,
                   std::vector<int> & B_i);
 
+        void Solve(BVP bvp,
+                  gsl_rng *rng,
+                  int N_tray,
+                  float c2,
+                  Stencil stencil,
+                  std::vector<float> & G,
+                  std::vector<float> & B,
+                  std::vector<int> & G_j,
+                  std::vector<int> & G_i,
+                  std::vector<int> & B_i);
+        void Test_Interpolator(BVP bvp,
+                  gsl_rng *rng,
+                  int N_tray,
+                  float c2,
+                  Stencil stencil);
+        void Test_G(BVP bvp,
+                  gsl_rng *rng,
+                  int N_tray,
+                  float c2,
+                  Stencil stencil,
+                  std::vector<float> & G,
+                  std::vector<float> & B,
+                  std::vector<int> & G_j,
+                  std::vector<int> & G_i,
+                  std::vector<int> & B_i);
         //Prints on screen interface atributes 
         void Print_Interface(void);
 

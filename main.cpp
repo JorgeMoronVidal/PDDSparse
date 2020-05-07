@@ -7,13 +7,14 @@
 #include <fstream>
 #include <iterator>
 #include <eigen3/Eigen/Dense>
+#include "stencil.hpp"
 #include "BVP.hpp"
 #include "node.hpp"
 #include "interface.hpp"
 #include "equation.hpp"
 #include "rectangle.hpp"
 
-#define N_tray 5000
+#define N_tray 50000
 #define REQUEST 1
 #define REPLY 2
 #define TAG_Gi 10
@@ -22,8 +23,9 @@
 #define TAG_Bi 20
 #define TAG_Bval 21
 #define h 0.0005f
-#define fac 0.1f
+#define fac 5.0f
 #define DEBUG
+
 void interface_metadata(std::vector<Eigen::VectorXf> & start, 
                         std::vector<Eigen::VectorXf> & end,
                         std::vector<std::vector<int> > & inter_indexes,
@@ -35,6 +37,14 @@ void interface_metadata(std::vector<Eigen::VectorXf> & start,
                         Eigen::VectorXf NE,
                         std::map<std::vector<int>, int> & interface_index);
 
+void interface_metadata(std::vector<Eigen::VectorXf> & node_positions,
+                        std::vector<std::vector<int> > & node_indexes,
+                        std::vector<std::vector<int> > & inter_indexes,
+                        std::map<std::vector<int>, int> & interface_map,
+                        std::vector<int> n_inter,
+                        std::vector<int> n_node,
+                        Eigen::VectorXf SW,
+                        Eigen::VectorXf NE);
 void stencil_metadata(std::vector<std::vector<int> > & stencil,
                       std::vector<Eigen::VectorXf> & stencil_pos,
                       std::vector<int> & stencil_index,
@@ -56,17 +66,16 @@ void set_direction_interior(bool & interior,
                             std::vector<int> & i_N);
 
 void compute_ipsi(std::vector<std::vector<float> > & ipsi_val,
-                  std::vector<std::vector<int> > & i_index,
-                  std::vector<std::vector<int> > & n_index,
-                  std::vector<Eigen::VectorXf> & start,
-                  std::vector<Eigen::VectorXf> & end,
-                  std::vector<Eigen::VectorXf> & node_pos,
-                  std::map<std::vector<int>, int> & in_index,
-                  int N_node,
-                  int myid,
-                  int server,
+                  std::vector<Eigen::VectorXf> & sten_position,
+                  BVP bvp,
                   float c2);
 
+void fullfill_node_pos(std::vector<Eigen::VectorXf> & node_pos,
+                       std::vector<std::vector<int> > i_index,
+                       std::vector<std::vector<int> > n_index,
+                       std::map<std::vector<int>, int> in_index,
+                       std::vector<Eigen::VectorXf> start,
+                       std::vector<Eigen::VectorXf> end);
 
 int main(int argc, char *argv[]) {
     /*  -World is the communicator with all the process involved in the program
@@ -103,16 +112,14 @@ int main(int argc, char *argv[]) {
     //Number of interfaces and nodes in each direction.
     std::vector<int> i_N, n_N;
     std::vector<std::vector<float> > ipsi_val;
-    //Total number of nodes
-    int N_node;
     //Initialization of these variables
-    i_N.push_back(3); n_N.push_back(10);i_N.push_back(3);n_N.push_back(10);
+    i_N.push_back(2); n_N.push_back(10);i_N.push_back(2);n_N.push_back(10);
 
     //SW and NE points of the domain 
     Eigen::VectorXf SW,NE;
     SW.resize(2); NE.resize(2);
-    SW(0) = -1.0f; SW(1) = -1.0f;
-    NE(0) = 1.0f;  NE(1) = 1.0f;
+    SW(0) = 0.0f; SW(1) = 0.0f;
+    NE(0) = 2.0f;  NE(1) = 2.0f;
 
     //direction of the interface: 0 if horizontal 1 if vertical
     int dir;
@@ -131,21 +138,16 @@ int main(int argc, char *argv[]) {
     sten_p[3] = global_p[3] = NE(1);
 
     //It gives the index where is stored the information of a given interface in a vector
-    std::map<std::vector<int>, int> in_index;
-    interface_metadata(start, end, i_index, n_index, i_N, n_N, N_node, SW, NE, in_index);
-    //c2 is defined
-    float c2 = fac/(pow(N_node,2));
-    //Subdomain is resized
-    subd_index.resize(start.size());
+    std::map<std::vector<int>, int> interface_map;
     std::vector<Eigen::VectorXf> Node_pos;
-    compute_ipsi(ipsi_val, i_index, n_index, start, end, Node_pos, in_index, N_node, myid, server, c2);
-    sleep(1);
-
-    //Interface object
-    Interface interface;
-
+    interface_metadata(Node_pos, n_index, i_index, interface_map, i_N, n_N, SW, NE);
+    //c2 is defined
+    float c2 = pow(fac*(Node_pos[0]-Node_pos[1]).norm(),2.0);
+    std::cout <<"c2 is " << c2 << "\n";
+    //Subdomain is resized
+    subd_index.resize(i_index.size());
+    //work_control controls the flow of the main program
     int work_control[2] = {0, 0}, aux = 0;
-
     if(myid == server){
     //I am the server who distributes task
         do {
@@ -160,7 +162,7 @@ int main(int argc, char *argv[]) {
             work_control[0]++;
 
         }while(work_control[0] < (int)i_index.size());
-
+        uint32_t N_node = Node_pos.size();
         Eigen::SparseMatrix<float> G, I, B;
         I.resize(N_node, N_node);
         I.setIdentity();
@@ -211,6 +213,17 @@ int main(int argc, char *argv[]) {
         Eigen::VectorXf Bd,ud;
         G.setFromTriplets(T_vec_G.begin(),T_vec_G.end());
         G+=I;
+        #ifdef DEBUG 
+        std::ofstream ofile("Output/Debug/G_m.txt");
+        for (int k=0; k<G.outerSize(); ++k)
+            for (Eigen::SparseMatrix<float>::InnerIterator it(G,k); it; ++it)
+           {
+                ofile << it.value() << "\t"
+                << it.row() << "\t"   // row index
+                << it.col() << "\n";   // col index (here it is equal to k)
+            }
+        ofile.close();
+        #endif
         B.setFromTriplets(T_vec_B.begin(), T_vec_B.end());
         Bd = Eigen::VectorXf(B);
         B.resize(0,0);
@@ -224,6 +237,13 @@ int main(int argc, char *argv[]) {
         Eigen::BiCGSTAB<Eigen::SparseMatrix<float> > solver_IT;
         solver_IT.compute(G);
         ud = solver_IT.solveWithGuess(Bd,ud);
+
+        ofile.open("Output/Debug/B_m.txt");
+        for(int k = 0; k < (int)Bd.size(); k++){
+            ofile << Bd(k) << std::endl;
+        }
+        ofile.close();
+
         std::cout <<" u was computed with error "<< solver_IT.error() << "\n";
         for(int i = 0; i< (int)Node_pos.size(); i++){
            std::cout<< "Node " << " PDDS = " << ud(i) <<
@@ -233,6 +253,8 @@ int main(int argc, char *argv[]) {
 
 
     } else {
+        //Interface object
+        Interface interface;
         //Randon number generator 
         const gsl_rng_type * T;
         gsl_rng * rng;
@@ -252,6 +274,7 @@ int main(int argc, char *argv[]) {
 
         //Boundary Value problem
         BVP bvp;
+        std::map<std::string, pfscalar> scalar_init;
         std::map<std::string, pfvector> vector_init;
         std::map<std::string, pfmatrix> matrix_init;
         std::map<std::string, std::string> string_init;
@@ -275,7 +298,7 @@ int main(int argc, char *argv[]) {
 
                 std::cout << "Process " << workerid << " is solving itfc "
                 << work_control[0] << '\n';
-                 std::map<std::string, pfscalar> scalar_init;
+                 
                 //BVP initialization 
                 scalar_init["f"] = Equation_f;
                 scalar_init["c"] = Equation_c;
@@ -287,26 +310,22 @@ int main(int argc, char *argv[]) {
                 bvp.Boundary_init(Rectangle2D, Stopping);
 
                 bvp.BVP_init(2,scalar_init, vector_init, matrix_init,string_init, Equation_RBF);
-                //Interface initialization
-                interface.Init(start[work_control[0]], end[work_control[0]], i_index[work_control[0]],
-                               n_index[work_control[0]], dir, subd_index[work_control[0]], interior, 
-                               chebyshev,N_tray, h);
-                
-                //Parameters of the stencil boundary
+                 //Parameters of the stencil boundary
                 sten_p[0] = global_p[0];
                 sten_p[1] = global_p[1];
                 sten_p[2] = global_p[2];
                 sten_p[3] = global_p[3];
+                //Stencil 
+                Stencil stencil;
+                stencil.Init(dir, interior, i_index[work_control[0]], Node_pos, n_index, interface_map, i_N, global_p);
+                //Interface initialization
+                interface.Init(Node_pos, i_index[work_control[0]],
+                               n_index[work_control[0]], dir, subd_index[work_control[0]], interior, 
+                               chebyshev,N_tray, h);
 
-                stencil_metadata(stencil, sten_pos, sten_index, n_index, dir, 
-                                interior, i_index[work_control[0]], start, end,
-                                i_N, n_N, in_index, sten_p);
+                interface.Solve(bvp, rng,N_tray,c2,stencil, G, B, G_j, G_i, B_i);
 
-               
-                interface.Solve(bvp, rng, sten_p, global_p, N_tray, 
-                                c2,ipsi_val, sten_pos, sten_index, G, 
-                                B, G_j, G_i, B_i);
-
+                
                 #ifdef DEBUG 
                 /*
                 sleep(work_control[0]);
@@ -474,92 +493,136 @@ void interface_metadata(std::vector<Eigen::VectorXf> & start,
         interface_index[inter_indexes[i]] = i;
     }
 
-    /*
-    for(int i = 0; i < 2; i++){
 
-        std::cout <<"sincrement " << i;
+}
 
-        for(int j = 0; j < 2; j++){
+void interface_metadata(std::vector<Eigen::VectorXf> & node_positions,
+                        std::vector<std::vector<int> > & node_indexes,
+                        std::vector<std::vector<int> > & inter_indexes,
+                        std::map<std::vector<int>, int> & interface_map,
+                        std::vector<int> n_inter,
+                        std::vector<int> n_node,
+                        Eigen::VectorXf SW,
+                        Eigen::VectorXf NE){
 
-            std::cout << " " << sincrement[i](j);
+    /*Initial values, long and  and shot increments for each direction*/
+   std::vector<Eigen::VectorXf> P_cent, lincrement, sincrement, start, end;
+   Eigen::VectorXf vaux;
+
+
+   inter_indexes.resize(n_inter[0]*(n_inter[1]-1)+n_inter[1]*(n_inter[0]-1));
+   node_indexes.resize(n_inter[0]*(n_inter[1]-1)+n_inter[1]*(n_inter[0]-1));
+   vaux.resize(SW.size());
+
+   //Increments are defined
+   //ShortIncrement
+   for (int i = 0; i < SW.size() ; i++){
+        for(int j = 0; j < vaux.size(); j++){
+            if (i == j){
+
+                vaux(j) = (NE(j) - SW(j))/(1.0f* (n_node[j]*n_inter[j]+2));
+
+            } else {
+
+                vaux(j) = 0.0f;
+
+            }
         }
-        std::cout <<'\n';
+        sincrement.push_back(vaux);
     }
-    for(int i = 0; i < 2; i++){
+    //LongIncrement
+    for (int i = 0; i < SW.size() ; i++){
 
-        std::cout <<"lincrement " << i;
+        for(int j = 0; j < vaux.size(); j++){
 
-        for(int j = 0; j < 2; j++){
+            if (i == j){
 
-            std::cout << " " << lincrement[i](j);
+                vaux(j) = (NE(j) - SW(j) - sincrement[i](j))/(1.0f* (n_inter[j]));
+
+            } else {
+
+                vaux(j) = 0.0f;
+
+            }
         }
 
-        std::cout <<'\n';
+        lincrement.push_back(vaux);
     }
+    //Initial Point
+   
+    for (int i = 0; i < SW.size(); i++){
+            vaux = SW;
+            for (int j = 0; j < SW.size(); j++){
+
+                vaux(j) += sincrement[i](j); 
+
+            }
+
+            if(i > 0){
+
+                vaux(i-1) += 0.5* sincrement[i-1](i-1);
+
+            }
+
+            P_cent.push_back(vaux);
+    }
+
+    //This section is not valid for + 2D problems
+
+    P_cent[0] += lincrement[1];
+    P_cent[1] += lincrement[0];
+
+    int cen = 0, nodei_cen = 0;
     
-    cen = 0;
-    std::cout << "Horizontal" << '\n';
-    for(int i = 0; i < n_inter[0]*(n_inter[1]-1); i++){
-        std::cout << "Interface" << '\n';
-        for(int j = 0; j < 2; j++){
+    for (int i = 0; i < n_inter[1] - 1; i++){
 
-            std::cout << " " << inter_indexes[i][j];
+        for (int j = 0; j < n_inter[0]; j++){
+
+            start.push_back(P_cent[0] + lincrement[0]*j);
+            end.push_back(P_cent[0] + lincrement[0]*(j+1) - sincrement[0]);
+
+            inter_indexes[cen].push_back(j);
+            inter_indexes[cen].push_back(2*i + 1);
+            
+
+            for (int l = 0; l < n_node[0]; l++){
+
+                node_indexes[cen].push_back(nodei_cen);
+                nodei_cen ++;
+            }
+
+            cen++;
+
+            start.push_back(P_cent[1] + lincrement[1]*j);
+            end.push_back(P_cent[1] + lincrement[1]*(j+1) - sincrement[1]);
+
+            inter_indexes[cen].push_back(i);
+            inter_indexes[cen].push_back(2*j);
+
+            for (int l = 0; l < n_node[0]; l++){
+
+                node_indexes[cen].push_back(nodei_cen);
+                nodei_cen ++;
+
+            }
+
+            cen++;
         }
-        std::cout << '\n';
-        std::cout <<"start " ;
 
-        for(int j = 0; j < 2; j++){
 
-            std::cout << " " << start[i](j);
-        }
+        P_cent[0] += lincrement[1];
+        P_cent[1] += lincrement[0];
 
-        std::cout <<" \n end " ;
-
-        for(int j = 0; j < 2; j++){
-
-            std::cout << " " << end[i](j);
-        }
-        std::cout << '\n' << "Node index:";
-        for (int l = 0; l < n_node[0]; l++){
-
-                std::cout << " " << node_indexes[i][l];
-                cen ++;
-
-        }
-
-        std::cout <<'\n';
     }
 
-    std::cout << "Vertical" << '\n';
-    for(int i = n_inter[0]*(n_inter[1]-1); i < 2*n_inter[0]*(n_inter[1]-1); i++){
-        for(int j = 0; j < 2; j++){
-
-            std::cout << " " << inter_indexes[i][j];
-        }
-        std::cout << '\n';
-        std::cout <<"start " ;
-
-        for(int j = 0; j < 2; j++){
-
-            std::cout << " " << start[i](j);
-        }
-        std::cout <<"\n end " ;
-
-        for(int j = 0; j < 2; j++){
-
-            std::cout << " " << end[i](j);
-        }
-        std::cout << '\n' << "Node index:";
-        for (int l = 0; l < n_node[0]; l++){
-
-                std::cout << " " << node_indexes[i][l];
-                cen ++;
-
-        }
-
-        std::cout <<'\n';
+    for(int i = 0; i < (int)inter_indexes.size(); i++){
+        interface_map[inter_indexes[i]] = i;
     }
-*/
+
+    fullfill_node_pos(node_positions, inter_indexes, node_indexes, interface_map,
+                      start, end);
+
+
 }
 
 void stencil_metadata(std::vector<std::vector<int> > & stencil,
@@ -846,37 +909,63 @@ void set_direction_interior(bool & interior,
 }
 
 void compute_ipsi(std::vector<std::vector<float> > & ipsi_val,
-                  std::vector<std::vector<int> > & i_index,
-                  std::vector<std::vector<int> > & n_index,
-                  std::vector<Eigen::VectorXf> & start,
-                  std::vector<Eigen::VectorXf> & end,
-                  std::vector<Eigen::VectorXf> & node_pos,
-                  std::map<std::vector<int>, int> & in_index,
-                  int N_node,
-                  int myid,
-                  int server,
+                  std::vector<Eigen::VectorXf> & sten_position,
+                  BVP bvp,
                   float c2){
 
     //Auxiliary vectors 
     Eigen::VectorXf vaux, sincrement;
+    //Psi Matrix, its inverse and Identity are created 
+    Eigen::MatrixXf Psi, iPsi, I;
+    //Matrix are resized
+    Psi.resize(sten_position.size(), sten_position.size());
+    I.resize(sten_position.size(), sten_position.size());
+    I.setIdentity();
+    //And fullfilled
+    for(unsigned int i = 0; i < sten_position.size(); i ++){
+        for(unsigned int j = 0; j < sten_position.size(); j ++){
+            Psi(i,j) = bvp.rbf.Value(sten_position[i], sten_position[j], c2);
+        }
+    }
+    std::ofstream ofile("Output/Debug/Psi.txt");
+    ofile << Psi;
+    ofile.close();
+    float err, cond;
+    iPsi= Psi.inverse();
+    Eigen::BiCGSTAB<Eigen::MatrixXf > CGS;
+    CGS.compute(Psi);
+    iPsi = CGS.solveWithGuess(I,iPsi);
+    err = CGS.error();
+    cond = Psi.norm()*iPsi.norm();
+    #ifdef DEBUG
+        std::cout << "Inverse matrix computed with error "<< err <<" and condition number" << cond << std::endl;
+    #endif
+    Psi.resize(0,0);
+    ipsi_val.resize(sten_position.size());
+    for(unsigned int i = 0; i < sten_position.size(); i ++){
+        ipsi_val[i].resize(sten_position.size());
+        for(unsigned int j = 0; j < sten_position.size(); j ++){
+            ipsi_val[i][j] = iPsi(i,j);
+        }
+    }
+    ofile.open("Output/Debug/iPsi.txt");
+    ofile << iPsi;
+    ofile.close();
+    I.resize(0,0);
+    iPsi.resize(0,0);
+}
+
+void fullfill_node_pos(std::vector<Eigen::VectorXf> & node_pos,
+                       std::vector<std::vector<int> > i_index,
+                       std::vector<std::vector<int> > n_index,
+                       std::map<std::vector<int>, int> in_index,
+                       std::vector<Eigen::VectorXf> start,
+                       std::vector<Eigen::VectorXf> end){
+    //Auxiliary vectors 
+    Eigen::VectorXf vaux, sincrement;
     //File variable
     std::ofstream ofile;
-
-    #ifdef DEBUG
-    if(myid == server){
-
-            ofile.open("Output/Debug/node_pos.txt");
-            ofile.close();
-            ofile.open("Output/Debug/psi_m.txt");
-            ofile.close();
-            ofile.open("Output/Debug/ipsi_m.txt");
-            ofile.close();
-            ofile.open("Output/Debug/check.txt");
-            ofile.close();
-
-    }
-    #endif
-
+    node_pos.clear();
     //Loop over the points in the system
     for(std::vector<std::vector<int> >::iterator it = i_index.begin();
     it != i_index.end();
@@ -887,77 +976,7 @@ void compute_ipsi(std::vector<std::vector<float> > & ipsi_val,
         for(int i = 0; i < (int) n_index[in_index[*it]].size(); i++){
 
             node_pos.push_back(vaux);
-            #ifdef DEBUG 
-            if(myid == server){
-                ofile.open("Output/Debug/node_pos.txt", std::ios::app | std::ios::ate);
-                ofile << n_index[in_index[*it]][i] << "\t" << vaux[0] << "\t" << vaux[1] << "\n";
-                ofile.close();
-            }
-            #endif
             vaux += sincrement;
         }
     }
-    //Psi Matrix is created 
-    Eigen::MatrixXf Psi, iPsi, I;
-    //Psi is resized 
-    Psi.resize(node_pos.size(), node_pos.size());
-    I.resize(node_pos.size(), node_pos.size());
-    I.setIdentity();
-    //And fullfilled
-    for(unsigned int i = 0; i < node_pos.size(); i ++){
-        for(unsigned int j = 0; j < node_pos.size(); j ++){
-            Psi(i,j) = Equation_RBF(node_pos[i], node_pos[j], c2);
-        }
-    }
-    #ifdef DEBUG
-    if(myid == server){
-        ofile.open("Output/Debug/psi_m.txt",std::ios::app | std::ios::ate);
-        for(unsigned int i = 0; i < node_pos.size(); i ++){
-            for(unsigned int j = 0; j < node_pos.size(); j ++){
-            ofile << i << "\t" << j << "\t" << Psi(i,j) << "\n";
-            }
-        }
-        ofile.close();
-    }
-    #endif
-
-    Eigen::ConjugateGradient<Eigen::MatrixXf, Eigen::Upper> cg;
-    cg.compute(Psi);
-    float err;
-    iPsi= Psi.fullPivLu().inverse();
-    iPsi = cg.solveWithGuess(I,iPsi);
-    if(myid == server){
-        err = (Psi *iPsi - I).norm()/I.norm();
-        std::cout << "Inverse matrix computed with error "<< err << "\n";
-    }
-    Psi.resize(0,0);
-    #ifdef DEBUG
-    if(myid == server){
-        ofile.open("Output/Debug/ipsi_m.txt",std::ios::app | std::ios::ate);
-        for(unsigned int i = 0; i < node_pos.size(); i ++){
-            for(unsigned int j = 0; j < node_pos.size(); j ++){
-            ofile << i << "\t" << j << "\t" << iPsi(i,j) << "\n";
-            }
-        }
-        ofile.close();
-        ofile.open("Output/Debug/check.txt",std::ios::app | std::ios::ate);
-        for(unsigned int i = 0; i < node_pos.size(); i ++){
-            for(unsigned int j = 0; j < node_pos.size(); j ++){
-            ofile << i << "\t" << j << "\t" << I(i,j) << "\n";
-            }
-        }
-        ofile.close();
-    }
-    #endif
-
-    ipsi_val.resize(N_node);
-
-    for(unsigned int i = 0; i < node_pos.size(); i ++){
-        ipsi_val[i].resize(N_node);
-        for(unsigned int j = 0; j < node_pos.size(); j ++){
-            ipsi_val[i][j] = iPsi(i,j);
-        }
-    }
-    I.resize(0,0);
-    iPsi.resize(0,0);
 }

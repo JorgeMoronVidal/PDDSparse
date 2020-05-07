@@ -1,16 +1,19 @@
 #ifndef NODE
 #define NODE
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <sys/time.h>
+#include <stdio.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Sparse>
 #include "lookuptable.hpp"
 #include "BVP.hpp"
 #include "rectangle.hpp"
+#include "stencil.hpp"
 class Node{
 
   private:
@@ -75,7 +78,41 @@ class Node{
                        std::vector<int> & stencil_index,
                        std::vector<float> & G,
                        float & B);
-
+    void  Solve_PDDSparse(BVP bvp,
+                       gsl_rng *rng, 
+                       float * parameters_stencil,
+                       float * parameters_surface,
+                       int N_tray,
+                       float c2,
+                       Stencil stencil,
+                       std::vector<int> & stencil_index,
+                       std::vector<float> & G,
+                       float & B);
+    void  Solve_PDDSparse(BVP bvp,
+                       gsl_rng *rng,
+                       int N_tray,
+                       float c2,
+                       Stencil stencil,
+                       std::vector<int> & stencil_index,
+                       std::vector<float> & G,
+                       float & B);
+    void Test_Interpolator(BVP bvp,
+                       gsl_rng *rng, 
+                       float * parameters_stencil,
+                       float * parameters_surface,
+                       int N_tray,
+                       float c2,
+                       Stencil stencil);
+    void Test_G(BVP bvp,
+                       gsl_rng *rng, 
+                       float * parameters_stencil,
+                       float * parameters_surface,
+                       int N_tray,
+                       float c2,
+                       Stencil stencil,
+                       std::vector<int> & stencil_index,
+                       std::vector<float> & G,
+                       float & B);
     //Draws a trayectory of the brownian path
     void Draw_trayectory(void);
 
