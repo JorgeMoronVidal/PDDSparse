@@ -51,6 +51,7 @@ public:
        void G_return(std::vector<int> & stencil_index, std::vector<float> & G);
        void G_return_withrep(std::vector<int> & stencil_index, std::vector<float> & G, int N_tray);
        void G_Test_return(std::vector<int> & stencil_index, std::vector<float> & G);
+       void Print(int node_index);
 	
 };
 #endif

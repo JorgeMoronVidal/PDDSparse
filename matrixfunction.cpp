@@ -13,8 +13,7 @@ void MatrixFunction::Init(pfmatrix input){
 
 }
 
-void MatrixFunction::Init(int dim, 
-                          std::string input){
+void MatrixFunction::Init(int dim,  std::string input){
     std::string aux;
     lookuptable.resize(dim);
     for(int i = 0; i < dim; i++){
@@ -34,9 +33,9 @@ void MatrixFunction::Init(int dim,
 }
 
 Eigen::MatrixXf MatrixFunction::Value(Eigen::VectorXf position, 
-                                      Eigen::VectorXf normal){
+                                      float t){
     if(analytic){
-        return function(position, normal);
+        return function(position, t);
     }
 
     Eigen::MatrixXf out;
@@ -54,7 +53,7 @@ Eigen::MatrixXf MatrixFunction::Value(Eigen::VectorXf position,
     return out;
 }
 
-Eigen::MatrixXf Default_Matrix(Eigen::VectorXf position, Eigen::VectorXf normal){
+Eigen::MatrixXf Default_Matrix(Eigen::VectorXf position, float t){
     
     return Eigen::MatrixXf::Zero(position.size(), position.size());
 }

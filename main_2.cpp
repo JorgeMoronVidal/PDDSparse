@@ -10,7 +10,6 @@
 #include "stencil.hpp"
 #include "BVP.hpp"
 #include "node.hpp"
-#include "interface.hpp"
 #include "equation.hpp"
 #include "rectangle.hpp"
 
@@ -22,8 +21,8 @@
 #define TAG_Gval 12
 #define TAG_Bi 20
 #define TAG_Bval 21
-#define h 0.0005f
-#define fac 0.5f
+#define h 0.0001f
+#define fac 3.0f
 #define DEBUG
 
 void interface_metadata(std::vector<Eigen::VectorXf> & node_positions,
@@ -55,11 +54,10 @@ void set_direction_interior(bool & interior,
                             int control,
                             std::vector<std::vector <int> > & i_index,
                             std::vector<int> & i_N);
-
-void compute_ipsi(std::vector<std::vector<float> > & ipsi_val,
-                  std::vector<Eigen::VectorXf> & sten_position,
-                  BVP bvp,
-                  float c2);
+void Print_interface(int node,
+                    std::vector< std::vector<int> > node_interface,
+                    std::vector< std::vector<int> > node_index,
+                    std::vector< Eigen::VectorXf > node_pos);
 
 int main(int argc, char *argv[]) {
     /*  -World is the communicator with all the process involved in the program
@@ -93,12 +91,12 @@ int main(int argc, char *argv[]) {
     //Number of interfaces and nodes in each direction.
     std::vector<int> i_N, n_N;
     //Initialization of these variables
-    i_N.push_back(2); n_N.push_back(10);i_N.push_back(2);n_N.push_back(10);
+    i_N.push_back(6); n_N.push_back(10);i_N.push_back(6);n_N.push_back(10);
     //SW and NE points of the domain 
     Eigen::VectorXf SW,NE;
     SW.resize(2); NE.resize(2);
     SW(0) = 0.0f; SW(1) = 0.0f;
-    NE(0) = 2.0f;  NE(1) = 2.0f;
+    NE(0) = 6.0f;  NE(1) = 6.0f;
 
     //direction of the interface: 0 if horizontal 1 if vertical
     int dir;
@@ -110,11 +108,11 @@ int main(int argc, char *argv[]) {
     bool chebyshev = false;
 
     //Parameters of the boundaries
-    float sten_p[4], global_p[4];
-    sten_p[0] = global_p[0] = SW(0);
-    sten_p[1] = global_p[1] = SW(1);
-    sten_p[2] = global_p[2] = NE(0);
-    sten_p[3] = global_p[3] = NE(1);
+    float global_p[4];
+    global_p[0] = SW(0);
+    global_p[1] = SW(1);
+    global_p[2] = NE(0);
+    global_p[3] = NE(1);
 
     //It gives the index where is stored the information of a given interface in a vector
     std::map<std::vector<int>, int> interface_map;
@@ -126,74 +124,31 @@ int main(int argc, char *argv[]) {
     fullfill_node_interface(node_pos.size(),node_interface, node_indexes);
 
     #ifdef DEBUG
-    char filename[100];
-    std::vector<int> vaux;
-    int index;
     FILE * pFile;
     if(myid == server){
-        for( int i = 0; i < i_N[0] - 1; i++){
-            for(int j = 0; j <= i_N[1]*2 - 2; j += 2){
-                vaux.clear();
-                vaux.push_back(i);
-                vaux.push_back(j);
-                index = interface_map[vaux]; 
-                sprintf(filename,"Output/Debug/Interface_%d%d.txt",i,j);
-                pFile = fopen (filename,"w");
-                if (pFile!=NULL){
-                    fprintf(pFile,"index,x,y\n");
-                    for(unsigned int k = 0; k < node_indexes[index].size(); k++) fprintf(pFile,"%d,%.3f,%.3f\n",node_indexes[index][k], 
-                    node_pos[node_indexes[index][k]](0),node_pos[node_indexes[index][k]](1));
-                } else {
-                    std::cout << "Something failed opening " << filename;
-                }
-                fclose (pFile);
-            }
-        }
-
-        for(int j = 1; j <= 2*i_N[1]-3; j +=2 ){
-            for(int i = 0; i < i_N[0]; i ++){
-                vaux.clear();
-                vaux.push_back(i);
-                vaux.push_back(j);
-                index = interface_map[vaux]; 
-                sprintf(filename,"Output/Debug/Interface_%d%d.txt",i,j);
-                pFile = fopen (filename,"w");
-                if (pFile!=NULL){
-                    fprintf(pFile,"index,x,y\n");
-                    for(unsigned int k = 0; k < node_indexes[index].size(); k++) fprintf(pFile,"%d,%.3f,%.3f\n",node_indexes[index][k], 
-                    node_pos[node_indexes[index][k]](0),node_pos[node_indexes[index][k]](1));
-                } else {
-                    std::cout << "Something failed opening " << filename;
-                }
-                fclose (pFile);  
-            }
-        }
-            
         pFile = fopen ("Output/Debug/Node_position.txt","w");
         if (pFile!=NULL)
         {   fprintf(pFile, "index,x,y\n");
             for( unsigned int i = 0; i < node_pos.size(); i++) fprintf(pFile, "%u,%.3f,%.3f \n",i,node_pos[i](0),node_pos[i](1));
         } else {
-            std::cout << "Something failed opening Output/Debug/Node_position.txt";
+            std::cout << "Something failed opening Output/Debug/Node_position.txt \n";
         }
         fclose(pFile);
-        pFile = fopen ("Output/Debug/Node_interface.txt","w");
-        if (pFile!=NULL)
-        {   fprintf(pFile, "index \t interface\n");
-            for(unsigned int i = 0; i < node_interface.size(); i++)
-                {fprintf(pFile, "%u",i);
-                 for(unsigned int j = 0; j < node_interface[i].size(); j++) fprintf(pFile, "\t %d",node_interface[i][j]);
-                fprintf(pFile, "\n");
-                }
-        } else { 
-            std::cout << "Something failed opening Output/Debug/Node_position.txt";
-        }
+        pFile = fopen("Output/Debug/boundary_global.txt", "w");
+        fprintf(pFile,"x,y\n");
+        fprintf(pFile,"%.3f,%.3f\n",global_p[0], global_p[1]);
+        fprintf(pFile,"%.3f,%.3f\n",global_p[2], global_p[1]);
+        fprintf(pFile,"%.3f,%.3f\n",global_p[2], global_p[3]);
+        fprintf(pFile,"%.3f,%.3f\n",global_p[0], global_p[3]);
+        fprintf(pFile,"%.3f,%.3f\n",global_p[0], global_p[1]);
         fclose(pFile);
         system("python3 Plot_Node_Position.py");
+        
     }
     #endif
     //c2 is defined
     float c2 = pow(fac*(node_pos[0]-node_pos[1]).norm(),2.0);
+    c2 = 0.07;
     if(myid == server) std::cout <<"c2 is " << c2 << "\n";
 
     //Subdomain is resized
@@ -303,8 +258,10 @@ int main(int argc, char *argv[]) {
 
         std::cout <<" u was computed with error "<< solver_IT.error() << "\n";
         for(int i = 0; i< (int)node_pos.size(); i++){
-           std::cout<< "Node " << " PDDS = " << ud(i) <<
-           " Analytic = "<< Equation_u(node_pos[i], node_pos[i]) << "\n";
+           std::cout<< "Node " << i << "("<< node_pos[i](0) << "," << node_pos[i](1) << ") PDDS = " << ud(i) <<
+           " Analytic = "<< Equation_u(node_pos[i], 0.0f) << 
+           " r.err = " << fabs(Equation_u(node_pos[i], 0.0f)-
+            ud(i))/Equation_u(node_pos[i], 0.0f)<<"\n";
         }
 
 
@@ -334,6 +291,7 @@ int main(int argc, char *argv[]) {
         std::map<std::string, pfscalar> scalar_init;
         std::map<std::string, pfvector> vector_init;
         std::map<std::string, pfmatrix> matrix_init;
+        std::map<std::string, pfscalarN> scalarN_init;
         std::map<std::string, std::string> string_init;
         //G and B storage vector
         std::vector<float> G, B;
@@ -350,10 +308,9 @@ int main(int argc, char *argv[]) {
         scalar_init["u"] = Equation_u;
         scalar_init["g"] = Equation_g;
         vector_init["b"] = Equation_b;
-        vector_init["F"] = Equation_F;
         matrix_init["sigma"] = Equation_sigma;
         bvp.Boundary_init(Rectangle2D, Stopping);
-        bvp.BVP_init(2,scalar_init, vector_init, matrix_init,string_init, Equation_RBF);
+        bvp.BVP_init(2,scalar_init,scalarN_init,vector_init, matrix_init,string_init, Equation_RBF);
         while(work_control[1] == 0){
 
             MPI_Send(work_control, 2, MPI_INT, server, REQUEST, world);
@@ -394,6 +351,8 @@ int main(int argc, char *argv[]) {
                                 interface_indexes[node_interface[work_control[0]][1]]);
                 }
                 stencil.Compute_ipsi(bvp, c2);
+                stencil.Print(work_control[0]);
+                Print_interface(work_control[0], node_interface, node_indexes, node_pos);
                 node_s.Solve_PDDSparse(bvp, rng, N_tray, c2, stencil,G_j_temp, G_temp, B_temp);
                 B.push_back(B_temp);
                 B_i.push_back(work_control[0]);
@@ -406,7 +365,6 @@ int main(int argc, char *argv[]) {
         }
         work_control[0] = (int) G.size();
         work_control[1] = (int) B.size();
-        std::cout << work_control[0] << " " << work_control[1] << "\n";
         MPI_Send(work_control, 2, MPI_INT, server, REQUEST, world);
         //G_i is sent
         MPI_Send(&G_i[0], work_control[0], MPI_INT, server, TAG_Gi, world);
@@ -648,57 +606,41 @@ void fullfill_node_interface(unsigned int N_node,
                              std::vector <std::vector<int> > node_indexes){
     node_interface.clear();
     node_interface.resize(N_node);
+    
     for(int i = 0; i < (int)node_indexes.size(); i++){
         for(int j = 0; j < (int)node_indexes[i].size(); j++){
             node_interface[node_indexes[i][j]].push_back(i);
         }
     }
+    FILE *pf;
+    pf = fopen("Output/Debug/Node_interface.txt", "w");
+    for(int i = 0; i < (int)node_interface.size(); i++){
+        for(int j = 0; j < (int)node_interface[i].size(); j++){
+            fprintf(pf,"%d %d ",i,node_interface[i][j]);
+        }
+        fprintf(pf,"\n");
+    }
+    fclose(pf);
 
 }
-void compute_ipsi(std::vector<std::vector<float> > & ipsi_val,
-                  std::vector<Eigen::VectorXf> & sten_position,
-                  BVP bvp,
-                  float c2){
 
-    //Auxiliary vectors 
-    Eigen::VectorXf vaux, sincrement;
-    //Psi Matrix, its inverse and Identity are created 
-    Eigen::MatrixXf Psi, iPsi, I;
-    //Matrix are resized
-    Psi.resize(sten_position.size(), sten_position.size());
-    I.resize(sten_position.size(), sten_position.size());
-    I.setIdentity();
-    //And fullfilled
-    for(unsigned int i = 0; i < sten_position.size(); i ++){
-        for(unsigned int j = 0; j < sten_position.size(); j ++){
-            Psi(i,j) = bvp.rbf.Value(sten_position[i], sten_position[j], c2);
+void Print_interface(int node,
+                    std::vector< std::vector<int> > node_interface,
+                    std::vector< std::vector<int> > node_index,
+                    std::vector< Eigen::VectorXf > node_pos){
+    char filename[100];
+    FILE *pFile;
+    sprintf(filename,"Output/Debug/Interface_%d.txt", node);
+    pFile = fopen(filename, "w");
+    int index;
+    fprintf(pFile,"index,x,y\n");
+    for(int i = 0; i < (int) node_interface[node].size(); i++){
+        for(int j = 0; j < (int) node_index[node_interface[node][i]].size(); j++){
+            index = node_index[node_interface[node][i]][j];
+            fprintf(pFile,"%d,%f,%f\n",index, node_pos[index](0),node_pos[index](1));
         }
     }
-    std::ofstream ofile("Output/Debug/Psi.txt");
-    ofile << Psi;
-    ofile.close();
-    float err, cond;
-    iPsi= Psi.inverse();
-    Eigen::BiCGSTAB<Eigen::MatrixXf > CGS;
-    CGS.compute(Psi);
-    iPsi = CGS.solveWithGuess(I,iPsi);
-    err = CGS.error();
-    cond = Psi.norm()*iPsi.norm();
-    #ifdef DEBUG
-        std::cout << "Inverse matrix computed with error "<< err <<" and condition number" << cond << std::endl;
-    #endif
-    Psi.resize(0,0);
-    ipsi_val.resize(sten_position.size());
-    for(unsigned int i = 0; i < sten_position.size(); i ++){
-        ipsi_val[i].resize(sten_position.size());
-        for(unsigned int j = 0; j < sten_position.size(); j ++){
-            ipsi_val[i][j] = iPsi(i,j);
-        }
-    }
-    ofile.open("Output/Debug/iPsi.txt");
-    ofile << iPsi;
-    ofile.close();
-    I.resize(0,0);
-    iPsi.resize(0,0);
+    fclose(pFile);
 }
+
 

@@ -78,7 +78,7 @@ void Stencil::Init(int dir,
                 vvaux_west.push_back(vaux);
 
                 //Letf-up spline Interface
-                vaux[0] = current_index[0] - 1;
+                vaux[0] = current_index[0];
                 vaux[1] = current_index[1] + 1;
                 vvaux_north.push_back(vaux);
 
@@ -89,7 +89,7 @@ void Stencil::Init(int dir,
                 vvaux_north.push_back(vaux);
 
                 //Letf-down spline Interface
-                vaux[0] = current_index[0] - 1;
+                vaux[0] = current_index[0];
                 vaux[1] = current_index[1] - 1;
                 stencil_parameters[1] = node_position[node_index[interface_map[vaux]].back()][1];
                 vvaux_south.push_back(vaux);
@@ -300,52 +300,81 @@ void Stencil::Init(int dir,
 	counter_north = 0; counter_south = 0;
 	counter_east = 0; counter_west = 0;
 
-    char fname[100];
-    FILE *pf;
-    sprintf(fname,"Output/Debug/stencil_%d%d.txt", current_index[0],current_index[1]);
-    pf = fopen(fname, "w");
-    std::cout << fname << std::endl;
-    fprintf(pf,"index,x,y,label\n");
-    for(unsigned int i = 0; i < index_south.size(); i++) fprintf(pf,"%d,%.3f,%.3f,south\n",index_south[i], pos_south[i](0), pos_south[i](1));
-    for(unsigned int i = 0; i < index_east.size(); i++) fprintf(pf,"%d,%.3f,%.3f,east\n",index_east[i], pos_east[i](0), pos_east[i](1));
-    for(unsigned int i = 0; i < index_north.size(); i++) fprintf(pf,"%d,%.3f,%.3f,north\n",index_north[i], pos_north[i](0), pos_north[i](1));
-    for(unsigned int i = 0; i < index_west.size(); i++) fprintf(pf,"%d,%.3f,%.3f,west\n",index_west[i], pos_west[i](0), pos_west[i](1));
-    fclose(pf);
-
 }
 
-void Stencil::Init(std::vector<int> interface_east,
-          std::vector<int> interface_south,
-          std::vector<int> interface_west,
-          std::vector<int> interface_north,
+void Stencil::Init(std::vector<int> interface_1,
+          std::vector<int> interface_2,
+          std::vector<int> interface_3,
+          std::vector<int> interface_4,
           std::vector<Eigen::VectorXf> & node_position,
           std::vector<std::vector<int> > & node_index,
           std::map<std::vector<int>, int> & interface_map,
           std::vector<int> & number_interfaces, 
           float *g_parameters){
     std::vector< std::vector<int> > vvaux_north, vvaux_south, vvaux_east, vvaux_west;
-    std::vector< int > vaux;
+    std::vector< int > vaux, interface_east, interface_west,interface_north, interface_south;
     vaux.resize(2);
     for(uint16_t i = 0; i < 4; i++) stencil_parameters[i] = global_parameters[i] = g_parameters[i];
+    int max_v, max_h;
+    max_v = std::max({interface_1[1], interface_2[1], interface_3[1], interface_4[1]});
+    max_h = std::max({interface_1[0], interface_2[0], interface_3[0], interface_4[0]});
+    if(interface_1[1]%2 == 1){
+        //Horizontal interface
+        if(interface_1[0] == max_h) interface_east = interface_1;
+        else interface_west = interface_1;
+    } else {
+        //Vertical interface
+        if(interface_1[1] == max_v) interface_north = interface_1;
+        else interface_south = interface_1;
+    }
+    if(interface_2[1]%2 == 1){
+        //Horizontal interface
+        if(interface_2[0] == max_h) interface_east = interface_2;
+        else interface_west = interface_2;
+    } else {
+        //Vertical interface
+        if(interface_2[1] == max_v) interface_north = interface_2;
+        else interface_south = interface_2;
+    }
+    if(interface_3[1]%2 == 1){
+        //Horizontal interface
+        if(interface_3[0] == max_h) interface_east = interface_3;
+        else interface_west = interface_3;
+    } else {
+        //Vertical interface
+        if(interface_3[1] == max_v) interface_north = interface_3;
+        else interface_south = interface_3;
+    }
+    if(interface_4[1]%2 == 1){
+        //Horizontal interface
+        if(interface_4[0] == max_h) interface_east = interface_4;
+        else interface_west = interface_4;
+    } else {
+        //Vertical interface
+        if(interface_4[1] == max_v) interface_north = interface_4;
+        else interface_south = interface_4;
+    }
     //Top spline Interface
     if(interface_east[1] + 2 <= 2*number_interfaces[1] - 3){
+        vaux[0] = interface_west[0];
+        vaux[1] = interface_west[1] + 2;
+        vvaux_north.push_back(vaux);
         vaux[0] = interface_east[0];
         vaux[1] = interface_east[1] + 2;
         stencil_parameters[3] = node_position[node_index[interface_map[vaux]].back()][1];
         vvaux_north.push_back(vaux);
-        vaux[0] = interface_west[0];
-        vaux[1] = interface_west[1] + 2;
-        vvaux_north.push_back(vaux);
+       
     }
     //Bottom spline Interface
     if(interface_east[1]-2 >= 1){
+        vaux[0] = interface_west[0];
+        vaux[1] = interface_west[1] - 2;
+        vvaux_south.push_back(vaux);
         vaux[0] = interface_east[0];
         vaux[1] = interface_east[1] - 2;
         stencil_parameters[1] = node_position[node_index[interface_map[vaux]].back()][1];
         vvaux_south.push_back(vaux);
-        vaux[0] = interface_west[0];
-        vaux[1] = interface_west[1] - 2;
-        vvaux_south.push_back(vaux);
+       
     }
 
     //Left splines
@@ -361,14 +390,13 @@ void Stencil::Init(std::vector<int> interface_east,
 
     //Right splines
     if(interface_north[0] < number_interfaces[0] - 2){
-        std::cout << interface_north[0] << " " << number_interfaces[0] - 1 << "\n";
-        vaux[0] = interface_south[0] - 1;
+        vaux[0] = interface_south[0] + 1;
         vaux[1] = interface_south[1];
         stencil_parameters[2] = node_position[node_index[interface_map[vaux]].back()][0];
-        vvaux_west.push_back(vaux);
-        vaux[0] = interface_north[0] - 1;
+        vvaux_east.push_back(vaux);
+        vaux[0] = interface_north[0] + 1;
         vaux[1] = interface_north[1];
-        vvaux_west.push_back(vaux);       
+        vvaux_east.push_back(vaux);       
     }
     //All variables of the class are emptied
     pos_north.clear(); index_north.clear(); G_north.clear();
@@ -450,18 +478,6 @@ void Stencil::Init(std::vector<int> interface_east,
     }
     counter_north = 0; counter_south = 0;
     counter_east = 0; counter_west = 0;
-
-    char fname[100];
-    FILE *pf;
-    sprintf(fname,"Output/Debug/stencil_cross.txt");
-    pf = fopen(fname, "w");
-    std::cout << fname << std::endl;
-    fprintf(pf,"index,x,y\n");
-    for(unsigned int i = 0; i < index_south.size(); i++) fprintf(pf,"%d,%.3f,%.3f,south\n",index_south[i], pos_south[i](0), pos_south[i](1));
-    for(unsigned int i = 0; i < index_east.size(); i++) fprintf(pf,"%d,%.3f,%.3f,east\n",index_east[i], pos_east[i](0), pos_east[i](1));
-    for(unsigned int i = 0; i < index_north.size(); i++) fprintf(pf,"%d,%.3f,%.3f,north\n",index_north[i], pos_north[i](0), pos_north[i](1));
-    for(unsigned int i = 0; i < index_west.size(); i++) fprintf(pf,"%d,%.3f,%.3f,west\n",index_west[i], pos_west[i](0), pos_west[i](1));
-    fclose(pf);
 }
 void Stencil::Reset(void){
     G_north.clear();
@@ -482,7 +498,7 @@ Eigen::MatrixXf Stencil::Compute_ipsi(std::vector<Eigen::VectorXf> & sten_positi
     //Auxiliary vectors 
     Eigen::VectorXf vaux, sincrement;
     //Psi Matrix, its inverse and Identity are created 
-    Eigen::MatrixXf Psi, iPsi, I;
+    Eigen::MatrixXd Psi, iPsi, I;
     //Matrix are resized
     Psi.resize(sten_position.size(), sten_position.size());
     I.resize(sten_position.size(), sten_position.size());
@@ -495,7 +511,7 @@ Eigen::MatrixXf Stencil::Compute_ipsi(std::vector<Eigen::VectorXf> & sten_positi
     }
     float err, cond;
     iPsi= Psi.inverse();
-    Eigen::BiCGSTAB<Eigen::MatrixXf> CGS;
+    Eigen::BiCGSTAB<Eigen::MatrixXd> CGS;
     CGS.compute(Psi);
     iPsi = CGS.solveWithGuess(I,iPsi);
     err = CGS.error();
@@ -503,7 +519,9 @@ Eigen::MatrixXf Stencil::Compute_ipsi(std::vector<Eigen::VectorXf> & sten_positi
     std::cout << "Inverse matrix computed with error "<< err <<" and condition number" << cond << std::endl;
     Psi.resize(0,0);
     I.resize(0,0);
-    return iPsi;
+    Eigen::MatrixXf iPsi_return;
+    iPsi_return = iPsi.cast<float>();
+    return iPsi_return;
 }
 
 bool Stencil::AreSame(float a, float b)
@@ -593,7 +611,7 @@ float Stencil::Test_Interpolator(Eigen::VectorXf X, BVP bvp, float c2){
         uH_ij = 0.0f;
         for(unsigned int i = 0; i < G_south.size(); i++){
             for(unsigned int j = 0; j < G_south.size(); j++){
-                uH_ij += ipsi_south(j,i)*bvp.rbf.Value(pos_south[j],X,c2)*bvp.u.Value(pos_south[i],X);
+                uH_ij += ipsi_south(j,i)*bvp.rbf.Value(pos_south[j],X,c2)*bvp.u.Value(pos_south[i],0.0f);
             }
         }
         return uH_ij;
@@ -605,7 +623,7 @@ float Stencil::Test_Interpolator(Eigen::VectorXf X, BVP bvp, float c2){
         uH_ij = 0.0f;
         for(unsigned int i = 0; i < G_north.size(); i++){
             for(unsigned int j = 0; j < G_north.size(); j++){
-                uH_ij += ipsi_north(j,i)*bvp.rbf.Value(pos_north[j],X,c2)*bvp.u.Value(pos_north[i],X);
+                uH_ij += ipsi_north(j,i)*bvp.rbf.Value(pos_north[j],X,c2)*bvp.u.Value(pos_north[i],0.0f);
             }
         }
         return uH_ij;
@@ -617,7 +635,7 @@ float Stencil::Test_Interpolator(Eigen::VectorXf X, BVP bvp, float c2){
         uH_ij = 0.0f;
         for(unsigned int i = 0; i < G_west.size(); i++){
             for(unsigned int j = 0; j < G_west.size(); j++){
-                uH_ij += ipsi_west(j,i)*bvp.rbf.Value(pos_west[j],X,c2)*bvp.u.Value(pos_west[i],X);
+                uH_ij += ipsi_west(j,i)*bvp.rbf.Value(pos_west[j],X,c2)*bvp.u.Value(pos_west[i],0.0f);
             }
         }
         return uH_ij;
@@ -629,7 +647,7 @@ float Stencil::Test_Interpolator(Eigen::VectorXf X, BVP bvp, float c2){
         uH_ij = 0.0f;
         for(unsigned int i = 0; i < G_east.size(); i++){
             for(unsigned int j = 0; j < G_east.size(); j++){
-                uH_ij += ipsi_east(j,i)*bvp.rbf.Value(pos_east[j],X,c2)*bvp.u.Value(pos_east[i],X);
+                uH_ij += ipsi_east(j,i)*bvp.rbf.Value(pos_east[j],X,c2)*bvp.u.Value(pos_east[i],0.0f);
             }
         }
         return uH_ij;
@@ -786,4 +804,25 @@ void Stencil::G_Test_return(std::vector<int> & stencil_index, std::vector<float>
 
 }
 
+void Stencil::Print(int node_index){
+    char fname[100];
+    FILE *pf;
+    sprintf(fname,"Output/Debug/stencil_%d.txt", node_index);
+    pf = fopen(fname, "w");
+    fprintf(pf,"index,x,y,sten\n");
+    for(unsigned int i = 0; i < index_south.size(); i++) fprintf(pf,"%d,%.3f,%.3f,south\n",index_south[i], pos_south[i](0), pos_south[i](1));
+    for(unsigned int i = 0; i < index_east.size(); i++) fprintf(pf,"%d,%.3f,%.3f,east\n",index_east[i], pos_east[i](0), pos_east[i](1));
+    for(unsigned int i = 0; i < index_north.size(); i++) fprintf(pf,"%d,%.3f,%.3f,north\n",index_north[i], pos_north[i](0), pos_north[i](1));
+    for(unsigned int i = 0; i < index_west.size(); i++) fprintf(pf,"%d,%.3f,%.3f,west\n",index_west[i], pos_west[i](0), pos_west[i](1));
+    fclose(pf);
+    sprintf(fname,"Output/Debug/boundary_stencil_%d.txt", node_index);
+    pf = fopen(fname, "w");
+    fprintf(pf,"x,y\n");
+    fprintf(pf,"%.3f,%.3f\n",stencil_parameters[0], stencil_parameters[1]);
+    fprintf(pf,"%.3f,%.3f\n",stencil_parameters[2], stencil_parameters[1]);
+    fprintf(pf,"%.3f,%.3f\n",stencil_parameters[2], stencil_parameters[3]);
+    fprintf(pf,"%.3f,%.3f\n",stencil_parameters[0], stencil_parameters[3]);
+    fprintf(pf,"%.3f,%.3f\n",stencil_parameters[0], stencil_parameters[1]);
+
+}
 

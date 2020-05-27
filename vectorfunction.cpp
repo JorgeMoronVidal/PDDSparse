@@ -22,10 +22,9 @@ void VectorFunction::Init(int dim,
     analytic = false;
 }
 
-Eigen::VectorXf VectorFunction::Value(Eigen::VectorXf position, 
-                            Eigen::VectorXf normal){
+Eigen::VectorXf VectorFunction::Value(Eigen::VectorXf position, float t){
     if(analytic){
-        return function(position, normal);
+        return function(position, t);
     }
 
     Eigen::VectorXf out;
@@ -37,7 +36,7 @@ Eigen::VectorXf VectorFunction::Value(Eigen::VectorXf position,
     return out;
 }
 
-Eigen::VectorXf Default_Vector(Eigen::VectorXf position, Eigen::VectorXf normal){
+Eigen::VectorXf Default_Vector(Eigen::VectorXf position, float t){
 
     return Eigen::VectorXf::Zero(position.size());
     

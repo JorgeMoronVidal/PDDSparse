@@ -22,16 +22,15 @@ class Boundary{
         /*If the distance function is given by a look up 
         table, it is stored in Distance_Numeric */
         LookUpTable Distance_Numeric;
-
-        //True if stopping, false if reflecting
-        pfstop stop;
-
+        
         /*True if Distance_Analytic gives the distance
           False if Distance_Numeric gives the distance*/
         bool analytic;
 
     public:
-    
+        //True if stopping, false if reflecting
+        pfstop stop;
+
         //Initialization by default
         Boundary(void);
 

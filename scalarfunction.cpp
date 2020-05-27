@@ -17,14 +17,14 @@ void ScalarFunction::Init(unsigned int dim,
 }
 
 float ScalarFunction::Value(Eigen::VectorXf position, 
-                            Eigen::VectorXf normal){
+                            float t){
     if(analytic){
-        return function(position, normal);
+        return function(position, t);
     }
 
     return lookuptable.Eval(position);
 }
 
-float Default_Scalar(Eigen::VectorXf X, Eigen::VectorXf N){
+float Default_Scalar(Eigen::VectorXf X, float t){
     return 0.0f;
 }

@@ -12,7 +12,7 @@ float Rectangle2D(float* params,
     exitpoint = position;
     if(position(0) > center[0]){
 
-        if(position(1) > center[1]){
+        if(position(1) >= center[1]){
             //First quadrant
             if((distances[0] <= halfside[0]) && (distances[1] <= halfside[1])){
                 //Is inside

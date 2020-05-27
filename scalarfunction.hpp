@@ -9,7 +9,7 @@
 /*This class takes care of the scalar functions in BVP*/
 class ScalarFunction{
 
-    typedef float (*pfscalar)(Eigen::VectorXf , Eigen::VectorXf);
+    typedef float (*pfscalar)(Eigen::VectorXf , float );
 
     private:
 
@@ -50,9 +50,9 @@ class ScalarFunction{
         Inputs: std::EigenvectorXf, std::EigenvectorXf
         */
         float Value(Eigen::VectorXf position, 
-                    Eigen::VectorXf normal);
+                    float t);
 };  
 //Default function which always returns  0.0f
-float Default_Scalar(Eigen::VectorXf X, Eigen::VectorXf N);
+float Default_Scalar(Eigen::VectorXf X, float t);
 #endif 
 

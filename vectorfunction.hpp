@@ -10,7 +10,7 @@
 /*This class takes care of the functions which image is a vector in BVP*/
 class VectorFunction{
 
-    typedef Eigen::VectorXf (*pfvector)(Eigen::VectorXf , Eigen::VectorXf);
+    typedef Eigen::VectorXf (*pfvector)(Eigen::VectorXf,float);
 
     private:
 
@@ -50,11 +50,10 @@ class VectorFunction{
         normal vector N.
         Inputs: std::EigenvectorXf, std::EigenvectorXf
         */
-        Eigen::VectorXf Value(Eigen::VectorXf position, 
-                    Eigen::VectorXf normal);
+        Eigen::VectorXf Value(Eigen::VectorXf position,float t);
 };  
 
 //Default function which always returns a vector full of 0.0f
-Eigen::VectorXf Default_Vector(Eigen::VectorXf position, Eigen::VectorXf normal);
+Eigen::VectorXf Default_Vector(Eigen::VectorXf position, float t);
 
 #endif 

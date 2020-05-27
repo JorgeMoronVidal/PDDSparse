@@ -30,7 +30,7 @@ class Node{
        -covar is the covariance between xi and the solution 
     */
     Eigen::VectorXf x0;
-    float h, sqh, solution, tolerance,   
+    float h, t, sqh, solution, tolerance,   
           var, std, covar,pearson_c;
     //Solved indicates if the solution for the node has been computed
     bool solved;

@@ -10,7 +10,7 @@
 /*This class takes care of the functions which image is a matrix in BVP*/
 class MatrixFunction{
 
-    typedef Eigen::MatrixXf (*pfmatrix)(Eigen::VectorXf , Eigen::VectorXf);
+    typedef Eigen::MatrixXf (*pfmatrix)(Eigen::VectorXf , float);
 
     private:
 
@@ -32,7 +32,7 @@ class MatrixFunction{
         Initialization of the object with the function
         it is suposed to perform.
         input has to be of the kind:
-        Eigen::MatrixXf (*input)(Eigen::VectorXf X, Eigen::VectorXf N);
+        Eigen::MatrixXf (*input)(Eigen::VectorXf X, float t);
         */
         void Init(pfmatrix input);
 
@@ -48,13 +48,13 @@ class MatrixFunction{
         /*
         Returns the value of the function in X with
         normal vector N.
-        Inputs: std::EigenvectorXf, std::EigenvectorXf
+        Inputs: std::EigenvectorXf, float
         */
         Eigen::MatrixXf Value(Eigen::VectorXf position, 
-                    Eigen::VectorXf normal);
+                    float t);
 };  
 
 //Default function which always returns a matrix full of 0.0f
-Eigen::MatrixXf Default_Matrix(Eigen::VectorXf position, Eigen::VectorXf normal);
+Eigen::MatrixXf Default_Matrix(Eigen::VectorXf position, float t);
 
 #endif 

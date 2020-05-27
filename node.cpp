@@ -84,19 +84,19 @@ void Node::Solve_FKAK(BVP bvp,
         Z = 0.0f;
 
         do{
-            sigma = bvp.sigma.Value(X,N);
+            sigma = bvp.sigma.Value(X,t);
             for(int j = 0; 
                     j < increment.size(); 
                     j++) increment(j) = (float) gsl_ran_gaussian_ziggurat(rng,1)*sqh;
             //xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
-            Z += bvp.f.Value(X,N)*Y*h;
-            Y += bvp.c.Value(X, N)*Y*h;// + Y*bvp.mu.Value(X,N).transpose()*increment;
-            X += (bvp.b.Value(X,N))*h + sigma*increment;
+            Z += bvp.f.Value(X,t)*Y*h;
+            Y += bvp.c.Value(X, t)*Y*h;// + Y*bvp.mu.Value(X,N).transpose()*increment;
+            X += (bvp.b.Value(X,t))*h + sigma*increment;
             counterN++;
     }while(bvp.boundary.Dist(params, X, E_P,N) < 0.0f);
 
     X = E_P;
-    sol_0 = Y*bvp.g.Value(X,N)+Z;
+    sol_0 = Y*bvp.g.Value(X,t)+Z;
     Update_Stat(sol_0,xi, summ, mean, sqsumm, summ_0, sqsumm_0, summ_xi,
     sqsumm_xi, var_xi, crossumm, counter, counterN, summN);
     }/*
@@ -165,117 +165,6 @@ void Node::Update_Stat(float sol_0, float xi, float & summ, float & mean,
 
 }
 
-void Node::Solve_PDDSparse(BVP bvp,
-                       gsl_rng *rng, 
-                       float * parameters_stencil,
-                       float * parameters_surface,
-                       int N_tray,
-                       float c2,
-                       std::vector< std::vector<float> > & iPsi,
-                       std::vector<Eigen::VectorXf> & stencil_position,
-                       std::vector<int> & stencil_index,
-                       std::vector<float> & G,
-                       float & B){
-
-    //Boundary of the stencil
-    Boundary sten_boundary;
-    sten_boundary._init_(Rectangle2D, Stopping);
-    //Random increment for each step
-    Eigen::VectorXf increment, mu;
-    increment.resize(X.size());
-    //G and B are emptied
-    G.clear();
-    G.resize(stencil_position.size());
-    for(unsigned int j = 0; j < stencil_position.size(); j++){
-
-         G[j] =0.0f;
-
-    }
-    B = 0.0f;
-    //Sigma Matrix
-    Eigen::MatrixXf sigma;
-    //Control variates variable
-    //float xi;
-    //Accumulators for the B component
-    float b_1 = 0.0f, b_2 = 0.0f, H_lj = 0.0f;
-    /*Control variable 
-    -0 if trayectory still inside
-    -1 if trayectory exits by stencil's boundary
-    -2 if trayectory exits by problem's boundary*/
-    int control;
-    //Counters of trayectories depending on where they end
-    int count_1 = 0, count_2 = 0;
-    //We compute N trayectories 
-    for(int i = 0; i < N_tray; i++){
-
-        //xi = 0.0f;
-        X = x0;
-        Y = 1.0f;
-        Z = 0.0f;
-        control = 0;
-
-        do{
-            sigma = bvp.sigma.Value(X,N);
-            mu = bvp.mu.Value(X,N);
-            for(int j = 0; 
-                    j < increment.size(); 
-                    j++) increment(j) = (float) gsl_ran_gaussian_ziggurat(rng,1)*sqh;
-            
-            //xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
-            Z += bvp.f.Value(X,N)*Y*h;
-            Y += bvp.c.Value(X, N)*Y*h + Y*bvp.mu.Value(X,N).transpose()*increment;
-            X += (bvp.b.Value(X,N) - sigma*mu)*h + sigma*increment;
-
-            if(bvp.boundary.Dist(parameters_surface, X, E_P, N) > 0.0f){
-                control = 2;
-                break;
-            }
-            if(sten_boundary.Dist(parameters_stencil, X, E_P, N) > 0.0f){
-                control = 1;
-                break;
-                }
-
-        }while(control == 0);
-        switch (control) {
-        
-             case 1: 
-                for(unsigned int j = 0; j < stencil_position.size(); j++){
-                    for(unsigned int l = 0; l< stencil_position.size(); l++){
-                        H_lj += iPsi[l][j] * bvp.rbf.Value(stencil_position[l], E_P, c2);
-                    }
-                    G[j] += H_lj * Y;
-                    H_lj = 0.0f;
-                }
-                b_1 += Z;
-                count_1 ++;
-                break;
-        
-              case 2: 
-                b_1 += Z;
-                b_2 += Y*bvp.g.Value(E_P,N);
-                count_2 ++;
-                break;
-        
-              default : 
-              std::cout << "Something went wrong while solving";
-        
-        }
-
-    }
-    for(unsigned int j = 0; j < stencil_position.size(); j++){
-        G[j] = (-1)*G[j]/count_1;
-    }
-
-    B = b_1/N_tray + b_2/count_2;
-
-    std::ofstream ofile("Output/Debug/G_m_prep.txt", std::ios::app);
-    for(unsigned int j = 0; j < stencil_position.size(); j++){
-        ofile <<G[j] << "\t" <<  i_node << "\t" << stencil_index[j] << std::endl;
-    }
-    ofile.close();
-
-}
-
 void  Node::Solve_PDDSparse(BVP bvp,
                        gsl_rng *rng, 
                        float * parameters_stencil,
@@ -319,16 +208,16 @@ void  Node::Solve_PDDSparse(BVP bvp,
         control = 0;
         //std::cout << X(0) << " " << X(1) << "\n";
         do{
-            sigma = bvp.sigma.Value(X,N);
-            mu = bvp.mu.Value(X,N);
+            sigma = bvp.sigma.Value(X,t);
+            mu = bvp.mu.Value(X,t);
             for(int j = 0; 
                     j < increment.size(); 
                     j++) increment(j) = (float) gsl_ran_gaussian_ziggurat(rng,1)*sqh;
             //std::cout << X(0) << " " << X(1) << "\n";
             //xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
-            Z += bvp.f.Value(X,N)*Y*h;
-            Y += bvp.c.Value(X, N)*Y*h; //Y*bvp.mu.Value(X,N).transpose()*increment;
-            X += (bvp.b.Value(X,N) - sigma*mu)*h + sigma*increment;
+            Z += bvp.f.Value(X,t)*Y*h;
+            Y += bvp.c.Value(X,t)*Y*h; //Y*bvp.mu.Value(X,N).transpose()*increment;
+            X += (bvp.b.Value(X,t) - sigma*mu)*h + sigma*increment;
 
             if(bvp.boundary.Dist(parameters_surface, X, E_P, N) > 0.0f){
                 control = 2;
@@ -352,7 +241,7 @@ void  Node::Solve_PDDSparse(BVP bvp,
               case 2:
                 //std::cout << "\t global boundary \n";
                 b_1 += Z;
-                b_2 += Y*bvp.g.Value(E_P,N);
+                b_2 += Y*bvp.g.Value(E_P,t);
                 count_2 ++;
                 break;
         
@@ -399,17 +288,16 @@ void  Node::Solve_PDDSparse(BVP bvp,
     //Control variates variable
     //float xi;
     //Accumulators for the B component
-    float b_1 = 0.0f, b_2 = 0.0f;
+    double b = 0.0f;
     /*Control variable 
     -0 if trayectory still inside
     -1 if trayectory exits by stencil's boundary
     -2 if trayectory exits by problem's boundary*/
     int control;
     //Counters of trayectories depending on where they end
-    int count_1 = 0, count_2 = 0;
     //We compute N trayectories
-    if(bvp.boundary.Dist(stencil.global_parameters, x0, E_P, N) >= 0.0f){
-                B = bvp.g.Value(x0,x0);
+    if(bvp.boundary.Dist(stencil.global_parameters, x0, E_P, N) >= -1E-06f){
+                B = bvp.g.Value(x0,t);
     } else{
         for(int i = 0; i < N_tray; i++){
 
@@ -419,22 +307,21 @@ void  Node::Solve_PDDSparse(BVP bvp,
             Z = 0.0f;
             control = 0;
             do{
-                sigma = bvp.sigma.Value(X,N);
+                sigma = bvp.sigma.Value(X,t);
                 //mu = bvp.mu.Value(X,N);
                 for(int j = 0; 
                         j < increment.size(); 
                         j++) increment(j) = (float) gsl_ran_gaussian_ziggurat(rng,1)*sqh;
                 //std::cout << X(0) << " " << X(1) << "\n";
                 //xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
-                Z += bvp.f.Value(X,N)*Y*h;
-                Y += bvp.c.Value(X,N)*Y*h; //Y*bvp.mu.Value(X,N).transpose()*increment;
-                X += (bvp.b.Value(X,N))*h + sigma*increment;
-
-                if(bvp.boundary.Dist(stencil.global_parameters, X, E_P, N) > 0.0f){
+                Z += bvp.f.Value(X,t)*Y*h;
+                Y += bvp.c.Value(X,t)*Y*h; //Y*bvp.mu.Value(X,N).transpose()*increment;
+                X += (bvp.b.Value(X,t))*h + sigma*increment;
+                if(bvp.boundary.Dist(stencil.global_parameters, X, E_P, N) > -0.5826*(N.transpose()*sigma).norm()*sqh){
                     control = 2;
                     break;
                 }
-                if(sten_boundary.Dist(stencil.stencil_parameters, X, E_P, N) > 0.0f){
+                if(sten_boundary.Dist(stencil.stencil_parameters, X, E_P, N) > -0.5826*(N.transpose()*sigma).norm()*sqh){
                     control = 1;
                     break;
                 }
@@ -445,15 +332,11 @@ void  Node::Solve_PDDSparse(BVP bvp,
         
                 case 1: 
                     stencil.G_update(E_P,Y,bvp,c2);
-                    b_1 += Z;
-                    count_1 ++;
+                    b += Z;
                 break;
         
                 case 2:
-                    //std::cout << "\t global boundary \n";
-                    b_1 += Z;
-                    b_2 += Y*bvp.g.Value(E_P,N);
-                    count_2 ++;
+                    b += Z + Y*bvp.g.Value(E_P,t);
                 break;
         
                 default : 
@@ -461,7 +344,7 @@ void  Node::Solve_PDDSparse(BVP bvp,
                 }
             }
         stencil.G_return_withrep(G_j, G, N_tray);
-        B = (b_1 + b_2)/N_tray;
+        B = b/N_tray;
     }
 }
 void  Node::Test_Interpolator(BVP bvp,
@@ -502,8 +385,8 @@ void  Node::Test_Interpolator(BVP bvp,
         control = 0;
         //std::cout << X(0) << " " << X(1) << "\n";
         do{
-            sigma = bvp.sigma.Value(X,N);
-            mu = bvp.mu.Value(X,N);
+            sigma = bvp.sigma.Value(X,t);
+            mu = bvp.mu.Value(X,t);
             for(int j = 0; 
                     j < increment.size(); 
                     j++) increment(j) = (float) gsl_ran_gaussian_ziggurat(rng,1)*sqh;
@@ -511,7 +394,7 @@ void  Node::Test_Interpolator(BVP bvp,
             //xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
             //Z += bvp.f.Value(X,N)*Y*h;
             //Y += bvp.c.Value(X, N)*Y*h + Y*bvp.mu.Value(X,N).transpose()*increment;
-            X += (bvp.b.Value(X,N) - sigma*mu)*h + sigma*increment;
+            X += (bvp.b.Value(X,t) - sigma*mu)*h + sigma*increment;
 
             if(bvp.boundary.Dist(parameters_surface, X, E_P, N) > 0.0f){
                 control = 2;
@@ -530,7 +413,7 @@ void  Node::Test_Interpolator(BVP bvp,
                 stencil.G_update(E_P,Y,bvp,c2);
                 count_1 ++;
                 ofile.open(buffer, std::ios::app);
-                ofile <<E_P(0) << "\t" <<  E_P(1)<< "\t" << bvp.u.Value(E_P,E_P) << "\t" << stencil.Test_Interpolator(E_P, bvp, c2) << "\t";
+                ofile <<E_P(0) << "\t" <<  E_P(1)<< "\t" << bvp.u.Value(E_P, t) << "\t" << stencil.Test_Interpolator(E_P, bvp, c2) << "\t";
                 if(stencil.AreSame(E_P(1),stencil.stencil_parameters[1])) ofile << "south \n";
                 if(stencil.AreSame(E_P(1),stencil.stencil_parameters[3])) ofile << "north \n";
                 if(stencil.AreSame(E_P(0),stencil.stencil_parameters[0])) ofile << "west \n";
@@ -595,8 +478,8 @@ void  Node::Test_G(BVP bvp,
         control = 0;
         //std::cout << X(0) << " " << X(1) << "\n";
         do{
-            sigma = bvp.sigma.Value(X,N);
-            mu = bvp.mu.Value(X,N);
+            sigma = bvp.sigma.Value(X,t);
+            mu = bvp.mu.Value(X,t);
             for(int j = 0; 
                     j < increment.size(); 
                     j++) increment(j) = (float) gsl_ran_gaussian_ziggurat(rng,1)*sqh;
@@ -604,7 +487,7 @@ void  Node::Test_G(BVP bvp,
             //xi+= Y*(sigma.transpose()*bvp.F.Value(X,N)).dot(increment);
             //Z += bvp.f.Value(X,N)*Y*h;
             //Y += bvp.c.Value(X, N)*Y*h + Y*bvp.mu.Value(X,N).transpose()*increment;
-            X += (bvp.b.Value(X,N) - sigma*mu)*h + sigma*increment;
+            X += (bvp.b.Value(X,t) - sigma*mu)*h + sigma*increment;
 
             if(bvp.boundary.Dist(parameters_surface, X, E_P, N) > 0.0f){
                 control = 2;
@@ -628,7 +511,7 @@ void  Node::Test_G(BVP bvp,
               case 2:
                 //std::cout << "\t global boundary \n";
                 b_1 += Z;
-                b_2 += Y*bvp.g.Value(E_P,N);
+                b_2 += Y*bvp.g.Value(E_P,t);
                 count_2 ++;
                 break;
         
@@ -640,7 +523,6 @@ void  Node::Test_G(BVP bvp,
     }
     stencil.G_Test_return(stencil_index, G);
     B = (float) i_node;
-    
     /*
     std::ofstream ofile("Output/Debug/G_m_prep.txt", std::ios::app);
     for(unsigned int j = 0; j < stencil_index.size(); j++){

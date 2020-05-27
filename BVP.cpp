@@ -19,10 +19,11 @@ BVP::BVP(void){
 }
 
 void BVP::BVP_init(int dim,
-              std::map<std::string, pfscalar> map_fscalar,
-              std::map<std::string, pfvector> map_fvector,
-              std::map<std::string, pfmatrix> map_fmatrix,
-              std::map<std::string, std::string> map_lut)
+                    std::map<std::string, pfscalar> map_fscalar,
+                    std::map<std::string, pfscalarN> map_fscalarN,
+                    std::map<std::string, pfvector> map_fvector,
+                    std::map<std::string, pfmatrix> map_fmatrix,
+                    std::map<std::string, std::string> map_lut)
 {       
     /* We read the maps and initialize the object components*/
 
@@ -42,19 +43,34 @@ void BVP::BVP_init(int dim,
 
             u.Init(it->second);
 
-        }else if (it->first == "varphi"){
-
-            varphi.Init(it->second);
-
-        } else if (it->first == "g"){
+        }else if (it->first == "g"){
 
             g.Init(it->second);
+
+        }else if (it->first == "p"){
+
+            p.Init(it->second);
 
         }
         control[it->first] = true;
         //std::cout << it->first << " was defined as an analytic function.\n";
     } 
+    
+    for(std::map<std::string, pfscalarN>::iterator it = map_fscalarN.begin();
+        it != map_fscalarN.end(); 
+        it ++){
 
+        if (it->first == "varphi"){
+
+            varphi.Init(it->second);
+
+        }
+        else if (it->first == "psi"){
+
+            psi.Init(it->second);
+
+        }
+    }
     
     for(std::map<std::string, pfvector>::iterator it = map_fvector.begin();
         it != map_fvector.end(); 
@@ -71,10 +87,6 @@ void BVP::BVP_init(int dim,
         }else if (it->first == "b"){
 
             b.Init(it->second);
-
-        }else if (it->first == "psi"){
-
-            psi.Init(it->second);
 
         }
 
@@ -159,13 +171,14 @@ void BVP::BVP_init(int dim,
 }
 
 void BVP::BVP_init(int dim,
-              std::map<std::string, pfscalar> map_fscalar,
-              std::map<std::string, pfvector> map_fvector,
-              std::map<std::string, pfmatrix> sigma,
-              std::map<std::string, std::string> map_lut,
-              pRBF rbfunc){
+                    std::map<std::string, pfscalar> map_fscalar,
+                    std::map<std::string, pfscalarN> map_fscalarN,
+                    std::map<std::string, pfvector> map_fvector,
+                    std::map<std::string, pfmatrix> map_fmatrix,
+                    std::map<std::string, std::string> map_lut,
+                    pRBF rbfunc){
 
-    BVP_init(dim, map_fscalar, map_fvector, sigma, map_lut);
+    BVP_init(dim, map_fscalar, map_fscalarN, map_fvector, map_fmatrix, map_lut);
     rbf.Init(rbfunc);
     control["RBF"] = true;
     //std::cout <<"RBF was defined as an analytic function"<< '\n';
