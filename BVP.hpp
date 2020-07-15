@@ -50,8 +50,7 @@ class BVP
 
         //RBP function for the meshless method
         RBFunction rbf;
-        //All the entries of the maps are set as Default. bvplat remains empty
-        BVP(void);
+        //All the entries of the maps are set as Default (Return 0).
 
         //The object is properly initialized given the functions or the directorys where the look up tables are stored.
         void BVP_init(int dim,

@@ -19,7 +19,7 @@ class Node{
   private:
     //x0 stores the point where the solution is going to be computed 
     Eigen::VectorXf X, N, E_P;
-    float Y,Z;
+    float Y,Z,xi;
   public:
     /*  -h stores the value of the time discretization
        -solution stores the value of the solution in x0
@@ -66,36 +66,49 @@ class Node{
                  float & var_xi, float & crossumm, int & counter, int & counterN, 
                  int & summN);
 
-    //Obtains i_node row of the G matrix for the Meshless Algorithm
-    void  Solve_PDDSparse(BVP bvp,
-                       gsl_rng *rng, 
-                       float * parameters_stencil,
-                       float * parameters_surface,
-                       int N_tray,
-                       float c2,
-                       std::vector< std::vector<float> > & iPsi,
-                       std::vector<Eigen::VectorXf> & stencil_position,
-                       std::vector<int> & stencil_index,
-                       std::vector<float> & G,
-                       float & B);
-    void  Solve_PDDSparse(BVP bvp,
-                       gsl_rng *rng, 
-                       float * parameters_stencil,
-                       float * parameters_surface,
-                       int N_tray,
-                       float c2,
-                       Stencil stencil,
-                       std::vector<int> & stencil_index,
-                       std::vector<float> & G,
-                       float & B);
+    /*
+    Elliptic solver for the node
+    BVP bvp The boundary Value problem
+    gsl_rng *rng GSL random number generator variable
+    int N_tray Number of trayectories per node
+    float c2 Constant for the meshless interpolator
+    Stencil stencil Node stencil
+    std::vector<int> & G_j G matrix column indexes
+    std::vector<float> & G G matrix values
+    float & B B vector value for the node
+    */
     void  Solve_PDDSparse(BVP bvp,
                        gsl_rng *rng,
                        int N_tray,
                        float c2,
                        Stencil stencil,
-                       std::vector<int> & stencil_index,
+                       std::vector<int> & G_j,
                        std::vector<float> & G,
                        float & B);
+    /*
+    Parabolic solver for the node
+    float T is the time for the trayectories to start
+    BVP bvp The boundary Value problem
+    gsl_rng *rng GSL random number generator variable
+    int N_tray Number of trayectories per node
+    float c2 Constant for the meshless interpolator
+    Stencil stencil Node stencil
+    std::vector<int> & G_j G matrix column indexes
+    std::vector<float> & G G matrix values
+    float & B B vector value for the node
+    */
+    void  Solve_PDDSparse(float T,
+                       BVP bvp,
+                       gsl_rng *rng,
+                       int N_tray,
+                       float c2,
+                       Stencil stencil,
+                       std::vector<int> & G_j,
+                       std::vector<float> & G,
+                       float & B);
+    /*
+    Test of the mesheless interpolator for a given node (Old version)
+    */
     void Test_Interpolator(BVP bvp,
                        gsl_rng *rng, 
                        float * parameters_stencil,
@@ -103,6 +116,8 @@ class Node{
                        int N_tray,
                        float c2,
                        Stencil stencil);
+    /*
+    Test of the G storage algorithm for a given node (Old version)*/
     void Test_G(BVP bvp,
                        gsl_rng *rng, 
                        float * parameters_stencil,

@@ -12,11 +12,13 @@ void VectorFunction::Init(pfvector input){
 
 void VectorFunction::Init(int dim, 
                           std::string input){
-    std::string aux;
+    std::ostringstream aux;
     lookuptable.resize(dim);
     for(int i = 0; i < dim; i++){
-        aux = input + "/" + std::to_string(i) +"_component";
-        lookuptable[i].Init(dim, aux);
+        aux << input + "/";
+        aux << i;
+        aux << "_component";
+        lookuptable[i].Init(dim, aux.str());
         aux.clear();
     }
     analytic = false;

@@ -1,0 +1,19 @@
+PDD Sparse
+-------------------
+
+Debemos realizar testeos con dos tipos de problema principales
+-Uno de ellos con solución oscilante (Sarah Smooth)
+-Otro de ellos con una solución no oscilante (Buscar entre las ecuaciones de los códigos de Paco)
+
+Con tamaño de subodminio fijo medir:
+-Sensibilidad del método con respecto al tamaño del dominio.
+
+Con tamaño del dominio fijo:
+-Sensibilidad del método con respecto al tamaño de los subdominios.
+
+Estudiar también diferentes topologías del stencil.
+
+Calcular... 
+Tiempo medio de salida numérico
+Varianzas ¿Son los errores estadisticos cometidos gaussianos?
+Hacer estadística de los términos de MATU y RHS

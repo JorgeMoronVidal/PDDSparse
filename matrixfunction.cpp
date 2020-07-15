@@ -14,7 +14,7 @@ void MatrixFunction::Init(pfmatrix input){
 }
 
 void MatrixFunction::Init(int dim,  std::string input){
-    std::string aux;
+    std::ostringstream aux;
     lookuptable.resize(dim);
     for(int i = 0; i < dim; i++){
 
@@ -22,8 +22,11 @@ void MatrixFunction::Init(int dim,  std::string input){
 
         for(int j = 0; j < dim; j++){
 
-            aux = input + "/" + std::to_string(i) +std::to_string(j) +"_component";
-            lookuptable[i][j].Init(dim, aux);
+            aux << input + "/";
+            aux << i;
+            aux << j;
+            aux << "_component";
+            lookuptable[i][j].Init(dim, aux.str());
 
         }
 

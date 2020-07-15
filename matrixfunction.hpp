@@ -18,7 +18,7 @@ class MatrixFunction{
         pfmatrix function;
 
         //stores the function if it is stored in a LUT
-        std::vector<std::vector<LookUpTable>> lookuptable;
+        std::vector<std::vector<LookUpTable> > lookuptable;
 
         //True if the function is analytic, false if it is not
         bool analytic;

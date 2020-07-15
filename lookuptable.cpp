@@ -1,5 +1,8 @@
 #include "lookuptable.hpp"
 #include <iostream>
+#include <stdlib.h> 
+#include <stdio.h>
+#include <unistd.h>
 #include <fstream>
 #include <string>
 
@@ -12,16 +15,19 @@ void LookUpTable::Init(int dim, std::string file){
     len = new int[dim];
     int  count = 0;
     std::ifstream infile;
-    std::string aux,line;
+    std::ostringstream  aux;
+    std::string line;
     
     for(int i = 0; i < dim; i++){
         //We charge the grid coordinates
-        aux = file + "/x_" + std::to_string(i) + ".txt";
+        aux << file + "/x_";
+        aux << i;
+        aux <<".txt";
         //We check if the file actually exist
-        infile.open(aux,std::ios::in);
+        infile.open(aux.str().c_str(),std::ios::in);
         if(! infile){
-            std::cout << aux << " couldn't be opened.\n Make sure "<< 
-            "x_" + std::to_string(i) + ".txt" << " is available in " <<
+            std::cout << aux.str() << " couldn't be opened.\n Make sure "<< 
+            "x_"<<i<<".txt" << " is available in " <<
             file << std::flush;
             std::terminate();
         }
@@ -35,7 +41,7 @@ void LookUpTable::Init(int dim, std::string file){
         infile.clear();
         infile.seekg(0, std::ios::beg);
         while (getline( infile, line )){
-            x[i][count] = std::stod(line);
+            x[i][count] = atof(line.c_str());
             count++;
         }
         count = 0;
@@ -43,7 +49,7 @@ void LookUpTable::Init(int dim, std::string file){
     }
     
     //The file which stores the values of the function in the grid is open
-    infile.open(file + "/value.txt");
+    infile.open((file + "/value.txt").c_str());
     if(! infile){
         std::cout << file + "/value.txt" << " couldn't be opened.\n Make sure "<< 
         "value.txt" << " is available in " <<file << std::flush;
@@ -69,13 +75,13 @@ void LookUpTable::Init(int dim, std::string file){
                 it++;
 
             }
-            for(it; *it != ' ' && it != line.end()
-                ; it++){
+            while((*it != ' ') && (it != line.end())){
 
                 cent += *it;
+                it++;
 
             }
-            z[counter[1] * len[0] + counter[0]] = std::stod(cent);
+            z[counter[1] * len[0] + counter[0]] = atof(cent.c_str());
             counter[0]++;
             cent.clear();
             } while(it != line.end());

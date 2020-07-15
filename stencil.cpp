@@ -244,7 +244,7 @@ void Stencil::Init(int dir,
     			index_north.push_back(*node);
     		}
         }
-        auto v_north = std::unique(index_north.begin(), index_north.end());
+        std::vector<int>::iterator v_north = std::unique(index_north.begin(), index_north.end());
         index_north.erase(v_north, index_north.end());
         for(unsigned int i = 0; i < index_north.size(); i++) pos_north.push_back(node_position[index_north[i]]);
         for(unsigned int i = 0; i < pos_north.size(); i++) G_north.push_back(0.0f);
@@ -260,7 +260,7 @@ void Stencil::Init(int dir,
     			index_south.push_back(*node);
     		}
         }
-        auto v_south = std::unique(index_south.begin(), index_south.end());
+        std::vector<int>::iterator v_south = std::unique(index_south.begin(), index_south.end());
         index_south.erase(v_south, index_south.end()); 
         for(unsigned int i = 0; i < index_south.size(); i++) pos_south.push_back(node_position[index_south[i]]);
         for(unsigned int i = 0; i < pos_south.size(); i++) G_south.push_back(0.0f);
@@ -276,7 +276,7 @@ void Stencil::Init(int dir,
     			index_east.push_back(*node);
     		}
         }
-        auto v_east = std::unique(index_east.begin(), index_east.end());
+        std::vector<int>::iterator v_east = std::unique(index_east.begin(), index_east.end());
         index_east.erase(v_east, index_east.end()); 
         for(unsigned int i = 0; i < index_east.size(); i++) pos_east.push_back(node_position[index_east[i]]);
         for(unsigned int i = 0; i < pos_east.size(); i++) G_east.push_back(0.0f);
@@ -292,7 +292,7 @@ void Stencil::Init(int dir,
     			index_west.push_back(*node);
     		}
         }
-        auto v_west = std::unique(index_west.begin(), index_west.end());
+        std::vector<int>::iterator v_west = std::unique(index_west.begin(), index_west.end());
         index_west.erase(v_west, index_west.end());
         for(unsigned int i = 0; i < index_west.size(); i++) pos_west.push_back(node_position[index_west[i]]);
         for(unsigned int i = 0; i < pos_west.size(); i++) G_west.push_back(0.0f);
@@ -315,9 +315,13 @@ void Stencil::Init(std::vector<int> interface_1,
     std::vector< int > vaux, interface_east, interface_west,interface_north, interface_south;
     vaux.resize(2);
     for(uint16_t i = 0; i < 4; i++) stencil_parameters[i] = global_parameters[i] = g_parameters[i];
-    int max_v, max_h;
-    max_v = std::max({interface_1[1], interface_2[1], interface_3[1], interface_4[1]});
-    max_h = std::max({interface_1[0], interface_2[0], interface_3[0], interface_4[0]});
+    int max_v = 0, max_h = 0;
+    max_h = std::max(interface_1[0], interface_2[0]);
+    max_h = std::max(max_h, interface_3[0]);
+    max_h = std::max(max_h, interface_4[0]);
+    max_v = std::max(interface_1[1], interface_2[1]);
+    max_v = std::max(max_v, interface_3[1]);
+    max_v = std::max(max_v, interface_4[1]);
     if(interface_1[1]%2 == 1){
         //Horizontal interface
         if(interface_1[0] == max_h) interface_east = interface_1;
@@ -354,6 +358,7 @@ void Stencil::Init(std::vector<int> interface_1,
         if(interface_4[1] == max_v) interface_north = interface_4;
         else interface_south = interface_4;
     }
+
     //Top spline Interface
     if(interface_east[1] + 2 <= 2*number_interfaces[1] - 3){
         vaux[0] = interface_west[0];
@@ -365,6 +370,7 @@ void Stencil::Init(std::vector<int> interface_1,
         vvaux_north.push_back(vaux);
        
     }
+    
     //Bottom spline Interface
     if(interface_east[1]-2 >= 1){
         vaux[0] = interface_west[0];
@@ -405,6 +411,7 @@ void Stencil::Init(std::vector<int> interface_1,
     pos_west.clear(); index_west.clear();G_west.clear();
     ipsi_north.resize(0,0); ipsi_south.resize(0,0);
     ipsi_east.resize(0,0); ipsi_west.resize(0,0);
+
     if(vvaux_north.size() > 0){
         for(std::vector<std::vector<int> >::iterator inter = vvaux_north.begin();
         inter != vvaux_north.end();
@@ -415,7 +422,7 @@ void Stencil::Init(std::vector<int> interface_1,
                 index_north.push_back(*node);
             }
         }
-        auto v_north = std::unique(index_north.begin(), index_north.end());
+        std::vector<int>::iterator v_north = std::unique(index_north.begin(), index_north.end());
         index_north.erase(v_north, index_north.end());
         pos_north.clear(); 
         for(unsigned int i = 0; i < index_north.size(); i++) pos_north.push_back(node_position[index_north[i]]);
@@ -433,7 +440,7 @@ void Stencil::Init(std::vector<int> interface_1,
                 index_south.push_back(*node);
             }
         }
-        auto v_south = std::unique(index_south.begin(), index_south.end());
+        std::vector<int>::iterator v_south = std::unique(index_south.begin(), index_south.end());
         index_south.erase(v_south, index_south.end()); 
         pos_south.clear();
         for(unsigned int i = 0; i < index_south.size(); i++) pos_south.push_back(node_position[index_south[i]]);
@@ -451,7 +458,7 @@ void Stencil::Init(std::vector<int> interface_1,
                 index_east.push_back(*node);
             }
         }
-        auto v_east = std::unique(index_east.begin(), index_east.end());
+        std::vector<int>::iterator v_east = std::unique(index_east.begin(), index_east.end());
         index_east.erase(v_east, index_east.end()); 
         pos_east.clear();
         for(unsigned int i = 0; i < index_east.size(); i++) pos_east.push_back(node_position[index_east[i]]);
@@ -469,7 +476,7 @@ void Stencil::Init(std::vector<int> interface_1,
                 index_west.push_back(*node);
             }
         }
-        auto v_west = std::unique(index_west.begin(), index_west.end());
+        std::vector<int>::iterator v_west = std::unique(index_west.begin(), index_west.end());
         index_west.erase(v_west, index_west.end());
         pos_west.clear(); 
         for(unsigned int i = 0; i < index_west.size(); i++) pos_west.push_back(node_position[index_west[i]]);
@@ -516,7 +523,7 @@ Eigen::MatrixXf Stencil::Compute_ipsi(std::vector<Eigen::VectorXf> & sten_positi
     iPsi = CGS.solveWithGuess(I,iPsi);
     err = CGS.error();
     cond = Psi.norm()*iPsi.norm();
-    std::cout << "Inverse matrix computed with error "<< err <<" and condition number" << cond << std::endl;
+    //std::cout << "Inverse matrix computed with error "<< err <<" and condition number" << cond << std::endl;
     Psi.resize(0,0);
     I.resize(0,0);
     Eigen::MatrixXf iPsi_return;

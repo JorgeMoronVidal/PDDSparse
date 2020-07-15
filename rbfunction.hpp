@@ -20,17 +20,17 @@ class RBFunction{
         Initialization of the object with the function
         it is suposed to perform.
         input has to be of the kind:
-        float (*input)(Eigen::VectorXf X, Eigen::VectorXf N);
+        float (*input)(Eigen::VectorXf X, Eigen::VectorXf X_i);
         */
         void Init(pRBF input);
 
         /*
         Returns the value of the function in X with
         normal vector N.
-        Inputs: std::EigenvectorXf, std::EigenvectorXf
+        Inputs: Eigen::EigenvectorXf, Eigen::EigenvectorXf
         */
         float Value(Eigen::VectorXf position, 
-                    Eigen::VectorXf normal,
+                    Eigen::VectorXf x_i,
                     float c2);
 };  
 

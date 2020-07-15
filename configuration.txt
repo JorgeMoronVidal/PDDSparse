@@ -1,0 +1,16 @@
+%Comment
+h = 0.0001 
+
+T = 1.0f
+
+fac = 2.5;
+
+NE = 5 5
+
+SW = 0 0
+
+N_tray = 1000
+
+N_subdo = 5
+
+N_node = 10

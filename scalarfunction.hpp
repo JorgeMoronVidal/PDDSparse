@@ -31,7 +31,7 @@ class ScalarFunction{
         Initialization of the object with the function
         it is suposed to perform.
         input has to be of the kind:
-        float (*input)(Eigen::VectorXf X, Eigen::VectorXf N);
+        float (*input)(Eigen::VectorXf X, float t);
         */
         void Init(pfscalar input);
 
@@ -47,7 +47,7 @@ class ScalarFunction{
         /*
         Returns the value of the function in X with
         normal vector N.
-        Inputs: std::EigenvectorXf, std::EigenvectorXf
+        Inputs: std::EigenvectorXf, float t
         */
         float Value(Eigen::VectorXf position, 
                     float t);

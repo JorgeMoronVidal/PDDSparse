@@ -29,8 +29,8 @@ class LookUpTable{
       -file is the file where the look up tables are stored*/
     void Init(int dim, std::string file);
     /*
-    Given a position or a position and a normal vector, it
-
+    Given a position or a position an extipointn and a normal vector,
+    it returns the distance to a boundary 
     */
     float Eval(Eigen::VectorXf position);
     float Eval(float* params, 
