@@ -1,0 +1,9 @@
+h0 = 0.0016
+eps = 0.5
+SW = -3 -3
+NE = 3 3
+N = 2
+N_job = 2
+N_subdo = 6 6
+N_node = 30 30
+fac = 2.85

@@ -1,0 +1,14 @@
+-r
+/home/jorge/Dropbox/DOC/PDDSparse/PDDSparse/r000ps
+--stack-stitching
+--data-limit-mb=1000
+--disk-space-limit=0
+--mrte-type=java
+--itt-config=frame
+--stackwalk=offline
+--mrte-mode=auto
+--type=cpu:counters:nostack
+--type=cpu:nostack
+--interval=100
+--
+/home/jorge/Dropbox/DOC/PDDSparse/vtunemain

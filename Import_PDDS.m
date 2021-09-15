@@ -1,0 +1,44 @@
+function [PDDS_sol, Analytic_sol, error, G,G_sparsity, G_cond, B, B_estimated, Var_B, x, y, APL, Ctime, distances] = Import_PDDS(experiment)
+    delimiterIn = ',';
+    headerlinesIn = 1;
+    G_route = append(experiment, '/Debug/G.csv');
+    G_data = importdata(G_route,delimiterIn, headerlinesIn);
+    G_i = G_data.data(:,1);G_j = G_data.data(:,2);G_ij = G_data.data(:,3);
+    clear G_data;
+    clear G_route;
+    G_i = G_i + ones(size(G_i));G_j = G_j + ones(size(G_j));
+    G = sparse(G_i,G_j,G_ij);
+    G_sparsity =  size(G_ij);
+    G_sparsity = G_sparsity(1)/(max(G_i)^2);
+    G_sparsity = sprintf('%.2f',G_sparsity);
+    G_cond = sprintf('%.3f',cond(full(G)));
+    %G_cond = sprintf('%.3f',condest(G));
+    clear G_i; clear G_j; clear G_ij;
+    B_route = append(experiment, '/Debug/B.csv');
+    B_data = importdata(B_route,delimiterIn, headerlinesIn);
+    B = B_data.data(:,3);
+    clear B_data;
+    clear B_route;
+    Ndbg_route = append(experiment, '/Debug/Node_debug.csv');
+    Ndbg_data = importdata(Ndbg_route,delimiterIn, headerlinesIn);
+    knot_sort = Ndbg_data.data(:,1);
+    Var_B = Ndbg_data.data(:,2);
+    APL = Ndbg_data.data(:,3);
+    Ctime = Ndbg_data.data(:,4);
+    [~,knot_sort]=sort(knot_sort); %Get the order of B
+    Var_B = Var_B(knot_sort);
+    APL = APL(knot_sort);
+    Ctime = Ctime(knot_sort);
+    sol_route = append(experiment, '/solution.csv');
+    sol = importdata(sol_route,delimiterIn, headerlinesIn);
+    x = sol.data(:,2);
+    y = sol.data(:,3);
+    Analytic_sol = sol.data(:,4);
+    PDDS_sol = sol.data(:,5);
+    error = sol.data(:,6);
+    clear sol;
+    clear sol_route;
+    B_estimated = G*Analytic_sol;
+    params = [min(x) min(y) max(x) max(y)];
+    distances = distance(params,x,y);
+return
