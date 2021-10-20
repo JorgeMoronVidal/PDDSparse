@@ -225,6 +225,5 @@ double Rectangle2D(double* params,
         }
 }
 bool Stopping(Eigen::VectorXd position){
-
     return true;
 }

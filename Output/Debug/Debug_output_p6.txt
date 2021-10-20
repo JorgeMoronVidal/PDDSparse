@@ -1,0 +1,38 @@
+Process 6 is solving node 2 .
+Process 6 is solving node 5 .
+Process 6 is solving node 9 .
+Process 6 is solving node 12 .
+Process 6 is solving node 16 .
+Process 6 is solving node 19 .
+Process 6 is solving node 23 .
+Process 6 is solving node 26 .
+Process 6 is solving node 30 .
+Process 6 is solving node 39 .
+Process 6 is solving node 43 .
+Process 6 is solving node 46 .
+Process 6 is solving node 50 .
+Process 6 is solving node 53 .
+Process 6 is solving node 56 .
+Process 6 is solving node 59 .
+Process 6 is solving node 62 .
+Process 6 is solving node 65 .
+Process 6 is solving node 68 .
+Process 6 is solving node 72 .
+Process 6 is solving node 76 .
+Process 6 is solving node 80 .
+Process 6 is solving node 83 .
+Process 6 is solving node 86 .
+Process 6 is solving node 91 .
+Process 6 is solving node 94 .
+Process 6 is solving node 97 .
+Process 6 is solving node 101 .
+Process 6 is solving node 105 .
+Process 6 is solving node 108 .
+Process 6 is solving node 112 .
+Process 6 is solving node 115 .
+Process 6 is solving node 119 .
+Process 6 ended its receiving nodes.
+Processor 6 ended sending its contribution to G and B
+Process 6 is done solving nodes 
+Process 6 is done sending G 
+Process 6 used 1.023195  hours 

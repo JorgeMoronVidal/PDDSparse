@@ -6,8 +6,6 @@ EMFKAC::EMFKAC()
     h = 0.001;
     sqrth = sqrt(h);
     t = 0.0;
-    T = gsl_rng_default; //Mt1997
-    rng = gsl_rng_alloc(T);
     N_rngcalls = 0;
     N_trayectories = 0;
     T = gsl_rng_default; //Mt1997

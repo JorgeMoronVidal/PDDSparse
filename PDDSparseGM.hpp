@@ -2,7 +2,7 @@
 #ifndef PDDSPARSEGM
 #define PDDSPARSEGM
 //Fraction of the interface the stencil is elongated
-#define STEN_ELONG 0.5
+#define STEN_ELONG 0.1
 //Minimum value of N
 #define N_min 500
 //Minimum value of h
@@ -28,8 +28,10 @@
 #define TAG_Gi 20
 #define TAG_Gj 21
 #define TAG_Gval 22
+#define TAG_Gvar 23
 #define TAG_Bi 30
 #define TAG_Bval 31
+#define TAG_Bvar 32
 #define TODO_JOB_UINT  101
 #define TODO_JOB_INT  102
 #define TODO_JOB_DOUBLE 103
@@ -37,7 +39,7 @@
 #define DONE_JOB_INT 112
 #define DONE_JOB_DOUBLE 113
 //Interfaces
-//#define INTERSECTIONS_YES
+#define INTERSECTIONS_YES
 #include "GMSolver.hpp"
 #include "interface.hpp"
 #include "stencil.hpp"
@@ -104,10 +106,10 @@ class PDDSparseGM{
         */
        Eigen::VectorXd SW, NE;
        /*G and B storage vector*/
-       std::vector<double> G, B;
+       std::vector<double> G, B, G_var, B_var;
        std::vector<int>  G_j, G_i, B_i;
        /*Triplet's vector*/
-       std::vector<T> T_vec_G, T_vec_B;
+       std::vector<T> T_vec_G, T_vec_Gvar, T_vec_B, T_vec_Bvar;
         /*
           -N is the initial number of trayectories 
         */

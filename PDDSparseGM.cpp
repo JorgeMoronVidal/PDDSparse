@@ -117,12 +117,12 @@ void PDDSparseGM::ReadFromFile(std::string file){
 
                             }
                             FILE *pf;
-                            if (FILE *file = fopen(name.c_str(), "r")) {
+                            if (FILE *pf = fopen(cent.c_str(), "r")) {
                                  char chunk[128];
-                                 while(fgets(chunk, sizeof(chunk), fp) != NULL) {
+                                 while(fgets(chunk, sizeof(chunk), pf) != NULL) {
                                     h_vec.push_back(atof(chunk));
                                  }
-                                fclose(file);
+                                fclose(pf);
                             } else {
                                  h0 = atof(cent.c_str());
                             }   
@@ -255,12 +255,12 @@ void PDDSparseGM::ReadFromFile(std::string file){
 
                             }
                             FILE *pf;
-                            if (FILE *file = fopen(name.c_str(), "r")) {
+                            if (FILE *pf = fopen(cent.c_str(), "r")) {
                                  char chunk[128];
-                                 while(fgets(chunk, sizeof(chunk), fp) != NULL) {
+                                 while(fgets(chunk, sizeof(chunk), pf) != NULL) {
                                   N_vec.push_back(atoi(chunk));
                                  }
-                                fclose(file);
+                                fclose(pf);
                             } else {
                                 N = atoi(cent.c_str());
                             }   
@@ -437,7 +437,6 @@ void PDDSparseGM::Fullfill_interfaces(void){
         interface_map[interfaces[i].label] = i;
     }
     #ifdef INTERSECTIONS_YES
-
     //stvaux stores the current interface index.
     //cross stores the index of the nodes that constitutes 
     std::vector<int> stvaux, cross;
@@ -531,7 +530,7 @@ void PDDSparseGM::Fullfill_interfaces(void){
     fclose(dfile);
     //Loop over the points in the system
     double disp;
-    disp = 0.25*(end[0]-start[0]).norm()/(node_index[0].size());
+    disp = 0.5*(end[0]-start[0]).norm()/(node_index[0].size());
     for(std::vector<Interface>::iterator it = interfaces.begin();
     it != interfaces.end();
     it++){
@@ -590,11 +589,12 @@ void PDDSparseGM::Solve(BVP bvp){
         pFile = fopen ("Output/Debug/Node_debug.csv","w");
         fprintf(pFile, "index,var_B,APL,time\n");
         fclose(pFile);
+         /*
         pFile = fopen("Output/Debug/G_var.csv","w");
         if (pFile == NULL) perror("Failed: ");
         fprintf(pFile,"G_i,G_j,var_G_ij\n");
         fclose(pFile);
-        /*std::forward_list<PDDSJob> job_list;
+        std::forward_list<PDDSJob> job_list;
         std::forward_list<PDDSJob>::iterator it = job_list.before_begin();
         PDDSJob auxjob;
         //Job list is fullfilled
@@ -657,25 +657,28 @@ void PDDSparseGM::Solve(BVP bvp){
                 stencil = Recieve_Stencil_Data();
                 stencil.Compute_ipsi(bvp,c2,debug_fname);
                 //stencil.Print(auxjob.index[0]);
-                solver.Solve(position,c2,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
+                solver.Solve_mix(position,c2,1.0,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
                 B.push_back(B_temp);
                 B_i.push_back(auxjob.index[0]);
+                B_var.push_back(solver.var_B);
                 for(unsigned int k = 0;k < G_temp.size(); k ++){
                     G_i.push_back(auxjob.index[0]);
                     G_j.push_back(G_j_temp[k]);
                     G.push_back(G_temp[k]);
+                    G_var.push_back(solver.var_G[k]);
                 }
                 knot_end = MPI_Wtime();
                 pFile = fopen("Output/Debug/Node_debug.csv","a");
                 fprintf(pFile,"%d,%f,%f,%f\n",auxjob.index[0],
                 solver.var_B,solver.APL,(knot_end-knot_start)/60);
                 fclose(pFile);
-                pFile = fopen("Output/Debug/G_var.csv","a");
+                /*pFile = fopen("Output/Debug/G_var.csv","a");
                 for(unsigned int i = 0; i < solver.var_G.size(); i++){
                     fprintf(pFile,"%d,%d,%f\n",auxjob.index[0],
                     G_j_temp[i],solver.var_G[i]);
                 }
                 fclose(pFile);
+                */
             }
         }while(!done);
         pFile = fopen(debug_fname,"a");
@@ -1163,6 +1166,10 @@ void PDDSparseGM::Send_G_B(void){
     }
     G.resize(0);
     MPI_Send(G_aux, work_control[0], MPI_DOUBLE, server,TAG_Gval, world);
+    for(int i = 0; i < work_control[0]; i++){
+         G_aux[i] = G_var[i];
+    }
+    MPI_Send(G_aux, work_control[0], MPI_DOUBLE, server,TAG_Gvar, world);
     delete G_aux;
     //B_i is sent
     int *B_i_aux;
@@ -1177,6 +1184,9 @@ void PDDSparseGM::Send_G_B(void){
     for(int i = 0; i < work_control[1]; i++) B_aux[i] = B[i];
     B.resize(0);
     MPI_Send(B_aux, work_control[1], MPI_DOUBLE, server, TAG_Bval, world);
+    for(int i = 0; i < work_control[1]; i++) B_aux[i] = B_var[i];
+    B.resize(0);
+    MPI_Send(B_aux, work_control[1], MPI_DOUBLE, server, TAG_Bvar, world);
     delete B_aux;
     FILE *dfile;
     dfile = fopen(debug_fname,"a");
@@ -1212,11 +1222,17 @@ void PDDSparseGM::Receive_G_B(void){
     G_aux = new double[work_control[0]];
     MPI_Recv(G_aux, work_control[0], MPI_DOUBLE, status.MPI_SOURCE, TAG_Gval, world, &status);
     for(int i = 0; i < work_control[0]; i++) G[i] = G_aux[i];
-    delete G_aux;
     //Triplets vector is fullfilled
     for(int j = 0; j < work_control[0]; j++){
         T_vec_G.push_back(T(G_i[j], G_j[j], G[j]));
     }
+    //G_var is received 
+    MPI_Recv(G_aux, work_control[0], MPI_DOUBLE, status.MPI_SOURCE, TAG_Gvar, world, &status);
+    for(int i = 0; i < work_control[0]; i++) G[i] = G_aux[i];
+    for(int j = 0; j < work_control[0]; j++){
+        T_vec_Gvar.push_back(T(G_i[j], G_j[j], G[j]));
+    }
+    delete G_aux;
     G.resize(0);
     G_i.resize(0);
     G_j.resize(0);
@@ -1233,10 +1249,15 @@ void PDDSparseGM::Receive_G_B(void){
     B_aux = new double[work_control[1]];
     MPI_Recv(B_aux, work_control[1], MPI_DOUBLE, status.MPI_SOURCE, TAG_Bval, world, &status);
     for(int i = 0; i < work_control[1]; i++) B[i] = B_aux[i];
-    delete B_aux;
     for(int j = 0; j < work_control[1]; j++){
         T_vec_B.push_back(T(B_i[j], 0, B[j]));
     }
+    MPI_Recv(B_aux, work_control[1], MPI_DOUBLE, status.MPI_SOURCE, TAG_Bvar, world, &status);
+    for(int i = 0; i < work_control[1]; i++) B[i] = B_aux[i];
+    for(int j = 0; j < work_control[1]; j++){
+        T_vec_Bvar.push_back(T(B_i[j], 0, B[j]));
+    }
+    delete B_aux;
 }
 Eigen::VectorXd PDDSparseGM::Node_Position(int node_index){
     Eigen::VectorXd output;
@@ -1253,17 +1274,25 @@ Eigen::VectorXd PDDSparseGM::Node_Position(int node_index){
 void PDDSparseGM::Compute_Solution(BVP bvp){
     Eigen::SparseMatrix<double> G_sparse, I_sparse, B_sparse;
     unsigned int size = (unsigned int) nNodes;
-     B_sparse.resize(size, 1);
-    B_sparse.setFromTriplets(T_vec_B.begin(), T_vec_B.end());
-    T_vec_B.resize(0);
-    I_sparse.resize(size, size);
-    I_sparse.setIdentity();
+    
+    FILE *ofile;
+    G_sparse.resize(size, size);
+    G_sparse.setFromTriplets(T_vec_Gvar.begin(),T_vec_Gvar.end());
+    T_vec_Gvar.resize(0);
+    ofile = fopen("Output/Debug/G_var.csv","w");
+    fprintf(ofile, "Gvar_i,Gvar_j,Gvar_ij\n");
+    for (int k=0; k<G_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(G_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
     G_sparse.resize(size, size);
     G_sparse.setFromTriplets(T_vec_G.begin(),T_vec_G.end());
     T_vec_G.resize(0);
+    I_sparse.resize(size, size);
+    I_sparse.setIdentity();
     G_sparse+=I_sparse;
     I_sparse.resize(0,0);
-    FILE *ofile;
     ofile = fopen("Output/Debug/G.csv","w");
     fprintf(ofile, "G_i,G_j,G_ij\n");
     for (int k=0; k<G_sparse.outerSize(); ++k)
@@ -1272,6 +1301,20 @@ void PDDSparseGM::Compute_Solution(BVP bvp){
             fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
         }
     fclose(ofile);
+    B_sparse.resize(size, 1);
+    B_sparse.setFromTriplets(T_vec_Bvar.begin(), T_vec_Bvar.end());
+    T_vec_Bvar.resize(0);
+    ofile = fopen("Output/Debug/B_var.csv","w");
+    fprintf(ofile, "B_i,B_j,B_ij\n");
+    for (int k=0; k<B_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(B_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    fclose(ofile);
+    B_sparse.resize(size, 1);
+    B_sparse.setFromTriplets(T_vec_B.begin(), T_vec_B.end());
+    T_vec_B.resize(0);
     ofile = fopen("Output/Debug/B.csv","w");
     fprintf(ofile, "B_i,B_j,B_ij\n");
     for (int k=0; k<B_sparse.outerSize(); ++k)
@@ -1280,16 +1323,17 @@ void PDDSparseGM::Compute_Solution(BVP bvp){
             fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
         }
     fclose(ofile);
-    Eigen::VectorXd ud,Bd;
+    Eigen::VectorXd ud,Bd,guess;
     Bd = Eigen::VectorXd(B_sparse);
+    guess = Bd*0;
     B_sparse.resize(0,0);
-    Eigen::SparseLU<Eigen::SparseMatrix<double> > solver_LU;
-    solver_LU.compute(G_sparse);
-    solver_LU.factorize(G_sparse);
-    ud = solver_LU.solve(Bd);
+    //Eigen::SparseLU<Eigen::SparseMatrix<double> > solver_LU;
+    //solver_LU.compute(G_sparse);
+    //solver_LU.factorize(G_sparse);
+    //ud = solver_LU.solve(Bd);
     Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver_IT;
     solver_IT.compute(G_sparse);
-    ud = solver_IT.solveWithGuess(Bd,ud);
+    ud = solver_IT.solveWithGuess(Bd,guess);
     ofile = fopen("Output/solution.csv","w");
     fprintf(ofile,"Knot_index,x,y,sol_analytic,sol_PDDS,err,rerr\n");
     double sol, err, rerr;
@@ -1297,7 +1341,7 @@ void PDDSparseGM::Compute_Solution(BVP bvp){
         sol = bvp.u.Value(Node_Position(i),T_start);
         err = ud(i) - sol;
         rerr = fabs(err)/sol;
-        fprintf(ofile,"%d,%f,%f,%f,%f,%f,%f\n",i,Node_Position(i)[0],Node_Position(i)[1],
+        fprintf(ofile,"%d,%e,%e,%e,%e,%e,%e\n",i,Node_Position(i)[0],Node_Position(i)[1],
         sol,ud(i),err,rerr);
     }
     fclose(ofile);

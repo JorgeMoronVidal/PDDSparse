@@ -13,15 +13,16 @@ int main(int argc, char *argv[]){
     std::map<std::string, std::string> string_init;
     //BVP initialization 
     scalar_init["f"] = Equation_f;
+    scalarN_init["psi"] = Equation_Psi;
     vector_init["F"] = Equation_F;
     scalar_init["c"] = Equation_c;
     scalar_init["u"] = Equation_u;
     scalar_init["g"] = Equation_g;
     vector_init["b"] = Equation_b;
     matrix_init["sigma"] = Equation_sigma;
-    bvp.Boundary_init(Rectangle2D, Stopping);
+    bvp.Boundary_init(Rectangle2D, Stopping_mix);
     bvp.BVP_init(2,scalar_init,scalarN_init,vector_init, matrix_init,string_init, Equation_RBF);
     PDDS.Solve(bvp);
-    getchar();
+    //getchar();
     return 0;
 }

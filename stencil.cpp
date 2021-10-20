@@ -129,7 +129,6 @@ Eigen::MatrixXd Stencil::Compute_ipsi(std::vector<Eigen::VectorXd> & sten_positi
     //getchar();
     double cond, err;
     Eigen::FullPivLU<Eigen::MatrixXd> lu(Psi);
-        FILE *fdebug;
     if(lu.isInvertible()){
         iPsi = lu.inverse();
     }else{
@@ -231,6 +230,7 @@ int Stencil::G_update(Eigen::VectorXd X, double Y, BVP bvp, double c2){
 		return 1;
 	}
 	std::cout << "Something went wrong computing H.";
+    getchar();
 	return 0;
 }
 
@@ -285,6 +285,7 @@ double Stencil::Test_Interpolator(Eigen::VectorXd X, BVP bvp, double c2){
         return uH_ij;
     }
     std::cout << "Something went wrong computing H.";
+    getchar();
     return 0.0f;
 }
 
@@ -410,6 +411,7 @@ int Stencil::G_Test_update(Eigen::VectorXd X){
             return 1;
     }
     std::cout << "Something went wrong computing H.";
+    getchar();
     return 0;
 }
 

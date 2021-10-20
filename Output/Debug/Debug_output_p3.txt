@@ -1,0 +1,40 @@
+Process 3 is solving node 0 .
+Process 3 is solving node 4 .
+Process 3 is solving node 7 .
+Process 3 is solving node 11 .
+Process 3 is solving node 14 .
+Process 3 is solving node 18 .
+Process 3 is solving node 21 .
+Process 3 is solving node 25 .
+Process 3 is solving node 28 .
+Process 3 is solving node 32 .
+Process 3 is solving node 34 .
+Process 3 is solving node 37 .
+Process 3 is solving node 40 .
+Process 3 is solving node 44 .
+Process 3 is solving node 47 .
+Process 3 is solving node 51 .
+Process 3 is solving node 54 .
+Process 3 is solving node 59 .
+Process 3 is solving node 63 .
+Process 3 is solving node 67 .
+Process 3 is solving node 70 .
+Process 3 is solving node 74 .
+Process 3 is solving node 78 .
+Process 3 is solving node 81 .
+Process 3 is solving node 84 .
+Process 3 is solving node 86 .
+Process 3 is solving node 89 .
+Process 3 is solving node 92 .
+Process 3 is solving node 96 .
+Process 3 is solving node 99 .
+Process 3 is solving node 103 .
+Process 3 is solving node 106 .
+Process 3 is solving node 110 .
+Process 3 is solving node 114 .
+Process 3 is solving node 117 .
+Process 3 ended its receiving nodes.
+Processor 3 ended sending its contribution to G and B
+Process 3 is done solving nodes 
+Process 3 is done sending G 
+Process 3 used 1.023214  hours 
