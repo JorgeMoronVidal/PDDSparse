@@ -1,15 +1,15 @@
-nNodes is 121
+nNodes is 717
 **********PDDSparse Solver*************
 ***************Ver 1.0******************
 ***********Jorge Moron Vidal************
 **********jmoron@math.uc3m.es***********
-h0 = 4.000000e-04 	 T_start = inf
-Number of trayectories per knot 20000
-Number of trayectories per job 10000
-Number of subdomains/interfaces: 2 x 2 
+h0 = 8.000000e-04 	 T_start = inf
+Number of trayectories per knot 10000
+Number of trayectories per job 5000
+Number of subdomains/interfaces: 4 x 4 
 Number of knots per interface: 30
-Position of South-West corner of the domain: (-1.00,-1.00)
-Position of North-East corner of the domain: (1.00,1.00)
+Position of South-West corner of the domain: (-2.00,-2.00)
+Position of North-East corner of the domain: (2.00,2.00)
 Sending node 0.
 Sending node 0.
 Sending node 1.
@@ -148,109 +148,3 @@ Sending node 67.
 Sending node 67.
 Sending node 68.
 Sending node 68.
-Sending node 69.
-Sending node 69.
-Sending node 70.
-Sending node 70.
-Sending node 71.
-Sending node 71.
-Sending node 72.
-Sending node 72.
-Sending node 73.
-Sending node 73.
-Sending node 74.
-Sending node 74.
-Sending node 75.
-Sending node 75.
-Sending node 76.
-Sending node 76.
-Sending node 77.
-Sending node 77.
-Sending node 78.
-Sending node 78.
-Sending node 79.
-Sending node 79.
-Sending node 80.
-Sending node 80.
-Sending node 81.
-Sending node 81.
-Sending node 82.
-Sending node 82.
-Sending node 83.
-Sending node 83.
-Sending node 84.
-Sending node 84.
-Sending node 85.
-Sending node 85.
-Sending node 86.
-Sending node 86.
-Sending node 87.
-Sending node 87.
-Sending node 88.
-Sending node 88.
-Sending node 89.
-Sending node 89.
-Sending node 90.
-Sending node 90.
-Sending node 91.
-Sending node 91.
-Sending node 92.
-Sending node 92.
-Sending node 93.
-Sending node 93.
-Sending node 94.
-Sending node 94.
-Sending node 95.
-Sending node 95.
-Sending node 96.
-Sending node 96.
-Sending node 97.
-Sending node 97.
-Sending node 98.
-Sending node 98.
-Sending node 99.
-Sending node 99.
-Sending node 100.
-Sending node 100.
-Sending node 101.
-Sending node 101.
-Sending node 102.
-Sending node 102.
-Sending node 103.
-Sending node 103.
-Sending node 104.
-Sending node 104.
-Sending node 105.
-Sending node 105.
-Sending node 106.
-Sending node 106.
-Sending node 107.
-Sending node 107.
-Sending node 108.
-Sending node 108.
-Sending node 109.
-Sending node 109.
-Sending node 110.
-Sending node 110.
-Sending node 111.
-Sending node 111.
-Sending node 112.
-Sending node 112.
-Sending node 113.
-Sending node 113.
-Sending node 114.
-Sending node 114.
-Sending node 115.
-Sending node 115.
-Sending node 116.
-Sending node 116.
-Sending node 117.
-Sending node 117.
-Sending node 118.
-Sending node 118.
-Sending node 119.
-Sending node 119.
-Sending node 120.
-Sending node 120.
-Process 7 used 1.024354  hours 
-Process 7 ended its work.

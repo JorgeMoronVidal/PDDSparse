@@ -1,39 +1,20 @@
-Process 5 is solving node 1 .
-Process 5 is solving node 4 .
-Process 5 is solving node 8 .
-Process 5 is solving node 11 .
-Process 5 is solving node 15 .
-Process 5 is solving node 18 .
-Process 5 is solving node 22 .
-Process 5 is solving node 25 .
-Process 5 is solving node 29 .
-Process 5 is solving node 32 .
-Process 5 is solving node 35 .
+Process 5 is solving node 3 .
+Process 5 is solving node 6 .
+Process 5 is solving node 10 .
+Process 5 is solving node 13 .
+Process 5 is solving node 17 .
+Process 5 is solving node 20 .
+Process 5 is solving node 24 .
+Process 5 is solving node 27 .
+Process 5 is solving node 31 .
+Process 5 is solving node 33 .
 Process 5 is solving node 37 .
-Process 5 is solving node 41 .
+Process 5 is solving node 40 .
 Process 5 is solving node 44 .
-Process 5 is solving node 48 .
-Process 5 is solving node 52 .
-Process 5 is solving node 55 .
+Process 5 is solving node 47 .
+Process 5 is solving node 50 .
+Process 5 is solving node 54 .
+Process 5 is solving node 58 .
 Process 5 is solving node 61 .
+Process 5 is solving node 64 .
 Process 5 is solving node 66 .
-Process 5 is solving node 69 .
-Process 5 is solving node 71 .
-Process 5 is solving node 75 .
-Process 5 is solving node 79 .
-Process 5 is solving node 82 .
-Process 5 is solving node 87 .
-Process 5 is solving node 90 .
-Process 5 is solving node 93 .
-Process 5 is solving node 97 .
-Process 5 is solving node 100 .
-Process 5 is solving node 104 .
-Process 5 is solving node 108 .
-Process 5 is solving node 111 .
-Process 5 is solving node 114 .
-Process 5 is solving node 118 .
-Process 5 ended its receiving nodes.
-Processor 5 ended sending its contribution to G and B
-Process 5 is done solving nodes 
-Process 5 is done sending G 
-Process 5 used 1.023066  hours 

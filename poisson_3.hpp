@@ -26,14 +26,15 @@ inline Eigen::VectorXd Equation_b(Eigen::VectorXd X, double t){
 inline Eigen::MatrixXd Equation_sigma(Eigen::VectorXd, double){
     return Eigen::MatrixXd::Identity(2,2) * 1.41421356237;
 }
-inline double Equation_Varphi(Eigen::VectorXd X, double t){
-    return 0.0;
+inline double Equation_Varphi(Eigen::VectorXd X, Eigen::VectorXd, double t){
+    return -2.0 + sin(X(1)*M_PI);
+    //return 0.0;
 }
 inline double Equation_Psi(Eigen::VectorXd X, Eigen::VectorXd normal, double t){
     return normal(0) * M_PI*((omegax)*cos(omegax * M_PI *X(0) + omegay * M_PI *X(1)) -
     omegapx*sin(omegapx * M_PI *X(0) + omegapy * M_PI *X(1))) + normal(1) * M_PI*
     ((omegay)*cos(omegax * M_PI *X(0) + omegay * M_PI *X(1)) - (omegapy)*sin(omegapx
-     * M_PI *X(0) + omegapy * M_PI *X(1)));
+     * M_PI *X(0) + omegapy * M_PI *X(1))) - Equation_u(X,t)*Equation_Varphi(X,normal,t);
 }
 inline Eigen::VectorXd Equation_F(Eigen::VectorXd X, double t){
     Eigen::VectorXd F(2);

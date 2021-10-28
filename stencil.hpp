@@ -10,7 +10,7 @@
 #include <algorithm>
 #include "boundary.hpp"
 #include "BVP.hpp"
-#define EPSILON 1e-6
+#define EPSILON 1e-8
 enum direction {North, South, East, West};
 class Stencil
 {
@@ -91,6 +91,10 @@ class Stencil
         */
         void G_return_withrep(std::vector<int> & stencil_index, std::vector<double> & G,
                              std::vector<double> & var_G, int N_tray);
+        /*True if the knot associated with the stencil interior, false otherwise*/
+        bool Is_Interior(void);
+        /*Projects a traejctory that has reached the corner of the domain to the closest stencil elongation*/
+        void Projection(Eigen::VectorXd X, Eigen::VectorXd & E_P);
         /*Returns G function when the meshless interpolator is being tested:
         std::vector<int> & stencil_index Indexes of the stencil nodes
         std::vector<double> & G Values od the G matrix
@@ -100,5 +104,6 @@ class Stencil
         int node_index index of the node whose stencil we are trying to compute
         */
         void Print(int node_index);
+
 };
 #endif

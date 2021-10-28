@@ -1,40 +1,20 @@
-Process 0 is solving node 3 .
-Process 0 is solving node 7 .
-Process 0 is solving node 10 .
-Process 0 is solving node 14 .
-Process 0 is solving node 17 .
-Process 0 is solving node 21 .
-Process 0 is solving node 24 .
-Process 0 is solving node 28 .
-Process 0 is solving node 31 .
-Process 0 is solving node 33 .
+Process 0 is solving node 2 .
+Process 0 is solving node 5 .
+Process 0 is solving node 9 .
+Process 0 is solving node 12 .
+Process 0 is solving node 16 .
+Process 0 is solving node 19 .
+Process 0 is solving node 23 .
+Process 0 is solving node 26 .
+Process 0 is solving node 30 .
 Process 0 is solving node 36 .
 Process 0 is solving node 39 .
-Process 0 is solving node 42 .
-Process 0 is solving node 45 .
-Process 0 is solving node 48 .
+Process 0 is solving node 43 .
+Process 0 is solving node 46 .
+Process 0 is solving node 50 .
 Process 0 is solving node 53 .
 Process 0 is solving node 57 .
-Process 0 is solving node 58 .
+Process 0 is solving node 59 .
 Process 0 is solving node 63 .
-Process 0 is solving node 66 .
-Process 0 is solving node 71 .
-Process 0 is solving node 73 .
-Process 0 is solving node 75 .
-Process 0 is solving node 78 .
-Process 0 is solving node 82 .
-Process 0 is solving node 85 .
-Process 0 is solving node 89 .
-Process 0 is solving node 93 .
-Process 0 is solving node 96 .
-Process 0 is solving node 100 .
-Process 0 is solving node 104 .
-Process 0 is solving node 107 .
-Process 0 is solving node 111 .
-Process 0 is solving node 115 .
-Process 0 is solving node 119 .
-Process 0 ended its receiving nodes.
-Processor 0 ended sending its contribution to G and B
-Process 0 is done solving nodes 
-Process 0 is done sending G 
-Process 0 used 1.024347  hours 
+Process 0 is solving node 65 .
+Process 0 is solving node 68 .

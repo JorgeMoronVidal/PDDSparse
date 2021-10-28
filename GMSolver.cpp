@@ -1,5 +1,6 @@
 #include"GMSolver.hpp"
 #include"rectangle.hpp"
+#define PROJECT_OUTSIDE
 GMSolver::GMSolver(void){
     h = 0.001;
 }
@@ -123,8 +124,8 @@ void GMSolver::LPG_Step(double rho, Boundary sten_boundary, Stencil stencil){
             Xp = X + bvp.b.Value(X,t)*h + bvp.sigma.Value(X,t)*increment;
             N_rngcalls += X.size();
             omega =  gsl_ran_exponential(rng,2*h); //Exponential distribution with parameter 1/(2*h)
-            uc = (N.transpose()*sigma).dot(increment) +N.transpose().dot(bvp.b.Value(X,t))*h;
-            nu = 0.5 *(uc+sqrt(pow((N.transpose()*sigma).norm(),2.0)*omega+pow(uc,2.0)));
+            uc = (N.transpose()*bvp.sigma.Value(X,t)).dot(increment) +N.transpose().dot(bvp.b.Value(X,t))*h;
+            nu = 0.5 *(uc+sqrt(pow((N.transpose()*bvp.sigma.Value(X,t)).norm(),2.0)*omega+pow(uc,2.0)));
             //d_k = bvp.boundary.Dist(params, Xp,E_Pp,Np);
             if (d_k < -0.0) d_k = 0.0;
             ji_t = std::max(0.0,nu+d_k);
@@ -311,7 +312,10 @@ void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
         } while(control == 0);
         
         switch (control) {        
-            case 1: 
+            case 1:
+            #ifdef PROJECT_OUTSIDE
+                stencil.Projection(X,E_P);
+            #endif
                 stencil.G_update(E_P,Y,bvp,c2);
                 b += Z + xi;
                 bb += pow(Z+xi,2.0);
@@ -438,7 +442,10 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
             }
         } while(control == 0);
         switch (control) {        
-            case 1: 
+            case 1:
+                #ifdef PROJECT_OUTSIDE
+                stencil.Projection(X,E_P);
+                #endif
                 stencil.G_update(E_P,Y,bvp,c2);
                 b += Z + xi;
                 bb += pow(Z+xi,2.0);

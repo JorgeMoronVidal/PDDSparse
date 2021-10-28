@@ -14,6 +14,7 @@ int main(int argc, char *argv[]){
     //BVP initialization 
     scalar_init["f"] = Equation_f;
     scalarN_init["psi"] = Equation_Psi;
+    scalarN_init["varphi"] = Equation_Varphi;
     vector_init["F"] = Equation_F;
     scalar_init["c"] = Equation_c;
     scalar_init["u"] = Equation_u;

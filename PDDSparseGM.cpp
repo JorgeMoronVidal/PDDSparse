@@ -657,7 +657,13 @@ void PDDSparseGM::Solve(BVP bvp){
                 stencil = Recieve_Stencil_Data();
                 stencil.Compute_ipsi(bvp,c2,debug_fname);
                 //stencil.Print(auxjob.index[0]);
-                solver.Solve_mix(position,c2,1.0,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
+                if(stencil.Is_Interior()){ 
+                    printf("Knot %d is interior\n",auxjob.index[0]);
+                    solver.Solve(position,c2,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
+                }else{
+                    printf("Knot %d is exterior\n",auxjob.index[0]);
+                    solver.Solve_mix(position,c2,1.0,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
+                }
                 B.push_back(B_temp);
                 B_i.push_back(auxjob.index[0]);
                 B_var.push_back(solver.var_B);

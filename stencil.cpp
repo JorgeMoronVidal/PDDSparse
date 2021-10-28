@@ -414,7 +414,63 @@ int Stencil::G_Test_update(Eigen::VectorXd X){
     getchar();
     return 0;
 }
-
+bool Stencil::Is_Interior(void){
+    if(ipsi_north.size()* ipsi_south.size() * ipsi_east.size() * ipsi_west.size() > 0) return true;
+    return false;
+}
+void Stencil::Projection(Eigen::VectorXd X, Eigen::VectorXd & E_P){
+    Eigen::VectorXd ps1, ps2;
+    //SW corner
+    if(AreSame(E_P(0),stencil_parameters[0])  && AreSame(E_P(1),stencil_parameters[1])){
+        ps1 = ps2 = X;
+        ps1[0] = stencil_parameters[0];
+        ps1[1] = std::max(pos_west.front()[1], X[1]);
+        ps2[0] = std::max(pos_south.front()[0], X[0]);
+        ps2[1] = stencil_parameters[1];
+    }
+    //SE corner 
+    if(AreSame(E_P(0),stencil_parameters[2])  && AreSame(E_P(1),stencil_parameters[1])){
+        ps1 = ps2 = X;
+        ps1[0] = stencil_parameters[2];
+        ps1[1] = std::max(pos_east.front()[1], X[1]);
+        ps2[0] = std::min(pos_south.back()[0], X[0]);
+        ps2[1] = stencil_parameters[1];
+    }
+    //NE corner
+    if(AreSame(E_P(0),stencil_parameters[2])  && AreSame(E_P(1),stencil_parameters[3])){
+        ps1 = ps2 = X;
+        ps1[0] = stencil_parameters[2];
+        ps1[1] = std::min(pos_east.back()[1], X[1]);
+        ps2[0] = std::min(pos_north.back()[0], X[0]);
+        ps2[1] = stencil_parameters[3];
+    }
+    //NW corner
+    if(AreSame(E_P(0),stencil_parameters[0])  && AreSame(E_P(1),stencil_parameters[3])){
+        ps1 = ps2 = X;
+        ps1[0] = stencil_parameters[0];
+        ps1[1] = std::min(pos_west.back()[1], X[1]);
+        ps2[0] = std::max(pos_north.front()[0], X[0]);
+        ps2[1] = stencil_parameters[1];
+    }
+    if(ps1.size() >0){
+        FILE *pfile;
+        pfile = fopen("Output/Debug/sten_project.txt","a");
+        fprintf(pfile,"Stencil SW (%f,%f) NE (%f,%f)\n",stencil_parameters[0],
+        stencil_parameters[1],stencil_parameters[2],stencil_parameters[3]);
+        if((X-ps1).norm() > (X-ps2).norm()){
+            fprintf(pfile, " X = (%f,%f) E_P = (%f,%f) ps2 = (%f,%f) \n",
+            X[0], X[1], E_P[0], E_P[1], ps2[0], ps2[1]);
+            E_P = ps2;
+        } else {
+            if((X-ps2).norm() > (X-ps1).norm()){
+                fprintf(pfile, " X = (%f,%f) E_P = (%f,%f) ps1 = (%f,%f) \n",
+                X[0], X[1], E_P[0], E_P[1], ps1[0], ps1[1]);
+                E_P = ps1;
+            }
+        }
+        fclose(pfile);
+    }
+}
 void Stencil::G_Test_return(std::vector<int> & stencil_index, std::vector<double> & G){
     stencil_index.clear();
     G.clear();

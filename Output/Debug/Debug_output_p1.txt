@@ -1,42 +1,21 @@
 Process 1 is solving node 0 .
 Process 1 is solving node 3 .
-Process 1 is solving node 6 .
+Process 1 is solving node 7 .
 Process 1 is solving node 10 .
-Process 1 is solving node 13 .
+Process 1 is solving node 14 .
 Process 1 is solving node 17 .
-Process 1 is solving node 20 .
+Process 1 is solving node 21 .
 Process 1 is solving node 24 .
-Process 1 is solving node 27 .
+Process 1 is solving node 28 .
 Process 1 is solving node 31 .
 Process 1 is solving node 34 .
-Process 1 is solving node 36 .
-Process 1 is solving node 40 .
-Process 1 is solving node 43 .
-Process 1 is solving node 47 .
-Process 1 is solving node 50 .
+Process 1 is solving node 37 .
+Process 1 is solving node 41 .
+Process 1 is solving node 44 .
+Process 1 is solving node 48 .
+Process 1 is solving node 51 .
 Process 1 is solving node 54 .
 Process 1 is solving node 57 .
-Process 1 is solving node 64 .
-Process 1 is solving node 67 .
-Process 1 is solving node 70 .
-Process 1 is solving node 74 .
-Process 1 is solving node 77 .
-Process 1 is solving node 81 .
-Process 1 is solving node 85 .
-Process 1 is solving node 88 .
-Process 1 is solving node 92 .
-Process 1 is solving node 95 .
-Process 1 is solving node 99 .
-Process 1 is solving node 101 .
-Process 1 is solving node 103 .
-Process 1 is solving node 107 .
-Process 1 is solving node 110 .
-Process 1 is solving node 113 .
-Process 1 is solving node 117 .
-Process 1 is solving node 120 .
-Process 1 is solving node 120 .
-Process 1 ended its receiving nodes.
-Processor 1 ended sending its contribution to G and B
-Process 1 is done solving nodes 
-Process 1 is done sending G 
-Process 1 used 1.021512  hours 
+Process 1 is solving node 61 .
+Process 1 is solving node 63 .
+Process 1 is solving node 66 .
