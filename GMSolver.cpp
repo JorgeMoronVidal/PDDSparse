@@ -473,6 +473,243 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
       sqrth = sqrt(h_cent);
   }
 }
+void GMSolver::Solve(Eigen::VectorXd X0, double c2, Stencil stencil, 
+             std::vector<int> & G_j, std::vector<double> & G, double &B, 
+             unsigned int Ntray, unsigned int N_job, VectorFunction & grad){
+Solve(X0, INFINITY, c2, stencil, G_j, G, B, Ntray, N_job, grad);
+}
+void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
+             Stencil & stencil, std::vector<int> & G_j,
+             std::vector<double> & G, double & B,  unsigned int Ntray,
+             unsigned int N_job, VectorFunction & grad){
+    for(unsigned int i = 0; i < 10; i++) sums[i] = 0.0;
+    increment.resize(X0.size());
+    X.resize(X0.size());
+    E_P.resize(X0.size());
+    N.resize(X0.size());
+    //Boundary of the stencil
+    Boundary sten_boundary;
+    sten_boundary._init_(Rectangle2D, Stopping);
+    //G and B are emptied
+    G_j.clear();
+    G.clear();
+    var_G.clear();
+    double b = 0.0, bb = 0.0;
+    B = 0.0;
+    APL = 0.0;
+    stencil.Reset();
+    /*Control variable 
+    -0 if trayectory still inside
+    -1 if trayectory exits by stencil's boundary
+    -2 if trayectory exits by problem's boundary*/
+    int16_t control;
+    Reset(X0,T_start);
+    if(bvp.boundary.Dist(params, X0, E_P, N) >= -1E-06 && bvp.boundary.stop(X0)){
+                B = bvp.g.Value(X0,t)/(1.0*Ntray/N_job);
+                b = B;
+                bb = B*B;
+                //printf("OUT Node [ %f, %f ] Distance = %f N*sig = %f h = %f",X0[0],X0[1],bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N),(N.transpose()*bvp.sigma.Value(X0,t)).norm(),h);
+    } else{
+      double h_cent;
+      h_cent = h;
+      if(bvp.boundary.stop(X0)){
+        h = std::min(h,
+        pow(bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N)/(
+        (N.transpose()*bvp.sigma.Value(X0,t)).norm()*2*0.5826),2.0));
+      }
+      sqrth = sqrt(h);
+      //printf("Node [ %f, %f ] Distance = %f N*sig = %f h = %f\n",X0[0],X0[1],bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N),(N.transpose()*bvp.sigma.Value(X0,t)).norm(),h);
+      for(unsigned int i = 0; i < N_job; i++){
+        Reset(X0,T_start);
+        control = 0;
+        sigma = bvp.sigma.Value(X0,t);
+        do{
+            Increment_Update();
+            N_rngcalls += X0.size();
+            //xi += (-1)*Y*((bvp.sigma.Value(X,t)).transpose()*grad.Value(X,t)).dot(increment);
+            xi += Y*(-bvp.sigma.Value(X,t).transpose()*grad.Value(X,0.0)).dot(increment);
+            Step();
+            APL += h;
+            if(t <= 0){
+                control = 3;
+            }
+            if(bvp.boundary.Dist(params, X, E_P, N) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                control = 2;
+                break;
+            }
+            if(sten_boundary.Dist(stencil.stencil_parameters, X, E_P, N) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                control = 1;
+                break;
+            }
+        } while(control == 0);
+        
+        switch (control) {        
+            case 1:
+            #ifdef PROJECT_OUTSIDE
+                stencil.Projection(X,E_P);
+            #endif
+                stencil.G_update(E_P,Y,bvp,c2);
+                b += Z + xi;
+                bb += pow(Z+xi,2.0);
+            break;        
+            case 2:
+                b += Z + xi + Y*bvp.g.Value(E_P,t);
+                bb += pow(Z + xi + Y*bvp.g.Value(E_P,t),2.0);
+            break;
+            case 3:
+                b += Z + xi + Y*bvp.p.Value(X,t);
+                bb += pow(Z + xi + Y*bvp.g.Value(E_P,t),2.0);
+            break;
+            default : 
+                std::cout << "Something went wrong while solving";
+        }
+      }
+      stencil.G_return_withrep(G_j, G, var_G,Ntray);
+      B = b/N_job;
+      var_B = bb/N_job-pow(B,2.0);
+      B = b/Ntray;
+      APL = APL/(h*N_job);
+      h = h_cent;
+      sqrth = sqrt(h_cent);
+  }
+}
+void GMSolver::Solve_mix(Eigen::VectorXd X0, double c2,
+             double rho, Stencil & stencil, std::vector<int> & G_j,
+             std::vector<double> & G, double & B, unsigned int Ntray,
+             unsigned int N_job, VectorFunction & grad){
+                 Solve_mix( X0, INFINITY, c2, rho, stencil,  G_j, G, B, Ntray, N_job, grad);
+             }
+void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
+             double rho, Stencil & stencil, std::vector<int> & G_j,
+             std::vector<double> & G, double & B, unsigned int Ntray,
+             unsigned int N_job, VectorFunction & grad){
+    for(unsigned int i = 0; i < 10; i++) sums[i] = 0.0;
+    increment.resize(X0.size());
+    X.resize(X0.size());
+    E_P.resize(X0.size());
+    N.resize(X0.size());
+    //Boundary of the stencil
+    Boundary sten_boundary;
+    sten_boundary._init_(Rectangle2D, Stopping);
+    //G and B are emptied
+    G_j.clear();
+    G.clear();
+    var_G.clear();
+    double b = 0.0, bb = 0.0;
+    B = 0.0;
+    APL = 0.0;
+    stencil.Reset();
+    /*Control variable 
+    -0 if trayectory still inside
+    -1 if trayectory exits by stencil's boundary
+    -2 if trayectory exits by problem's boundary*/
+    int16_t control;
+    Reset(X0,T_start);
+    std::cout << "Hi\n";
+    if((bvp.boundary.Dist(params, X0, E_P, N) >= -1E-06) &&  bvp.boundary.stop(E_P)){
+      B = bvp.g.Value(X0,t)/(1.0*Ntray/N_job);
+      b = B;
+      bb = B*B;
+    } else{
+      double h_cent = bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N);
+      h_cent = h;
+      if(bvp.boundary.stop(E_P)){
+        h = std::min(h,
+        pow(bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N)/(
+        (N.transpose()*bvp.sigma.Value(X0,t)).norm()*2*0.5826),2.0));
+        sqrth = sqrt(h);
+      }
+      Xp.resize(X0.size());
+      E_Pp.resize(X0.size());
+      Np.resize(X0.size());
+      //printf("Node [ %f, %f ] Distance = %f N*sig = %f h = %f\n",X0[0],X0[1],bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N),(N.transpose()*bvp.sigma.Value(X0,t)).norm(),h);
+      for(unsigned int i = 0; i < N_job; i++){
+        Reset(X0,T_start);
+        d_k = sten_boundary.Dist(stencil.stencil_parameters, X, E_P, N);
+        control = 0;
+        do{
+            if(bvp.boundary.stop(E_P)){
+                sigma = bvp.sigma.Value(X,t);
+                Increment_Update();
+                //xi += (-1)*Y*((bvp.sigma.Value(X,t)).transpose()*grad.Value(X,t)).dot(increment);
+                N_rngcalls += X0.size();
+                xi += Y*(-bvp.sigma.Value(X,t)*grad.Value(X,0.0)).dot(increment);
+                //std::cout << "Numeric" << Y*(-bvp.sigma.Value(X,t)*grad.Value(X,0.0)).dot(increment) << "Analytic" << Y*bvp.F.Value(X,t).dot(increment) << std::endl;
+                //getchar();
+                Step();
+                APL += h;
+                if(t <= 0){
+                    control = 3;
+                }
+                if(bvp.boundary.Dist(params, X, E_P, Np) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                    control = 2;
+                    break;
+                }
+                if(sten_boundary.Dist(stencil.stencil_parameters, X, E_P, N) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                    control = 1;
+                    break;
+                }
+            } else {
+                LPG_Step(rho,sten_boundary,stencil);
+                N_rngcalls += X0.size();
+                xi += Y*(-bvp.sigma.Value(X,t).transpose()*grad.Value(X0,0.0)).dot(increment);
+                Z += Y*(bvp.f.Value(X,t)*h + bvp.psi.Value(X,N,t)*ji_t);
+                Y += bvp.c.Value(X,t)*Y*h + bvp.varphi.Value(X,N,t) * Y * ji_t;
+                X = Xp;
+                N = Np;
+                E_P = E_Pp;
+                t += - h;
+                ji_t = 0.0;
+                sigma = bvp.sigma.Value(X,t);
+                /*if(bvp.boundary.stop(E_P)){
+                    if(bvp.boundary.Dist(params, X, E_Pp, Np) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                    control = 2;
+                    break;
+                    }
+                    if(sten_boundary.Dist(stencil.stencil_parameters, X, E_Pp, Np) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                    control = 1;
+                    break;
+                }
+                }else{
+                    if(sten_boundary.Dist(stencil.stencil_parameters, X, E_Pp, Np) > -0.5826*(N.transpose()*sigma).norm()*sqrth){
+                    control = 1;
+                    break;
+                    }
+                }*/
+            }
+        } while(control == 0);
+        switch (control) {        
+            case 1:
+                #ifdef PROJECT_OUTSIDE
+                stencil.Projection(X,E_P);
+                #endif
+                stencil.G_update(E_P,Y,bvp,c2);
+                b += Z + xi;
+                bb += pow(Z+xi,2.0);
+            break;        
+            case 2:
+                b += Z + xi + Y*bvp.g.Value(E_P,t);
+                bb += pow(Z + xi + Y*bvp.g.Value(E_P,t),2.0);
+            break;
+            case 3:
+                b += Z + xi + Y*bvp.p.Value(X,t);
+                bb += pow(Z + xi + Y*bvp.p.Value(X,0.0),2.0);
+            break;
+            default : 
+                std::cout << "Something went wrong while solving";
+
+        }
+      }
+      stencil.G_return_withrep(G_j, G, var_G,Ntray);
+      B = b/N_job;
+      var_B = bb/N_job-pow(B,2.0);
+      var_B = var_B/Ntray;
+      B = b/Ntray;
+      APL = APL/(h*N_job);
+      h = h_cent;
+      sqrth = sqrt(h_cent);
+  }
+}
 void GMSolver::Test(std::string filename, Eigen::VectorXd X0, double T_start, 
                   double tolerance, double h0,  unsigned int Nsamples){
     FILE *fp;

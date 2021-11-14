@@ -28,7 +28,7 @@ LFLAGS = -L/usr/local/lib
 LIBS = -lgsl -lgslcblas -lm 
 
 # define the source files, default here is main.cpp
-SRCS = main_1.cpp PDDSparseGM.cpp interface.cpp subdomain.cpp BVP.cpp stencil.cpp scalarfunction.cpp scalarfunctionN.cpp vectorfunction.cpp matrixfunction.cpp rbfunction.cpp boundary.cpp lookuptable.cpp rectangle.cpp FKACSolver.cpp GMSolver.cpp
+SRCS = main_Dirich_Loop.cpp PDDSparseGM.cpp interface.cpp subdomain.cpp BVP.cpp stencil.cpp scalarfunction.cpp scalarfunctionN.cpp vectorfunction.cpp matrixfunction.cpp rbfunction.cpp boundary.cpp lookuptable.cpp rectangle.cpp FKACSolver.cpp GMSolver.cpp
 
 # define the object files 
 #

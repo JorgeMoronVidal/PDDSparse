@@ -33,8 +33,8 @@
      Dx =0, Dy = 0, x =1, y = 1; 
      return
    end
-   x = (VEC_x(1)+0.5*(1+cos(pi*(0:N)/N))*(VEC_x(N)-VEC_x(1))).';
-   y = (VEC_y(1)+0.5*(1+cos(pi*(0:N)/N))*(VEC_y(N)-VEC_y(1))).'; 
+   x = (VEC_x(N)+0.5*(1+cos(pi*(0:N)/N))*(VEC_x(1)-VEC_x(N))).';
+   y = (VEC_y(N)+0.5*(1+cos(pi*(0:N)/N))*(VEC_y(1)-VEC_y(N))).'; 
    c = [2; ones(N-1,1); 2] .* (-1) .^ (0:N)' ;
    X = repmat(x,1,N+1) ; 
    dX = X - X.' ;

@@ -49,6 +49,15 @@ class GMSolver: public EMFKAC {
              double rho, Stencil & stencil, std::vector<int> & G_j,
              std::vector<double> & G,  double & B, unsigned int Ntray, 
              unsigned int N_job);
+        void Solve(Eigen::VectorXd X0, double c2, Stencil stencil, 
+                    std::vector<int> & G_j, std::vector<double> & G,
+                    double & B, unsigned int Ntray, unsigned int N_job
+                    ,VectorFunction & grad);
+        /*Same but for mixed BC's*/
+        void Solve_mix(Eigen::VectorXd X0,double c2,
+             double rho, Stencil & stencil, std::vector<int> & G_j,
+             std::vector<double> & G,  double & B, unsigned int Ntray, 
+             unsigned int N_job, VectorFunction & grad);
         /*Solves a parabolic equation on inital point X0 using FKAK formula 
         approximated by Gobet-Menozzi's integrator with N trayectories*/
         void Solve(Eigen::VectorXd X0, double T_start, double c2,
@@ -60,6 +69,17 @@ class GMSolver: public EMFKAC {
              double rho, Stencil & stencil, std::vector<int> & G_j,
              std::vector<double> & G, double & B, unsigned int Ntray,
              unsigned int N_job);
+        /*Solves a parabolic equation on inital point X0 using FKAK formula 
+        approximated by Gobet-Menozzi's integrator with N trayectories*/
+        void Solve(Eigen::VectorXd X0, double T_start, double c2,
+                    Stencil & stencil, std::vector<int> & G_j, 
+                    std::vector<double> & G, double &B,  unsigned int Ntray,
+                    unsigned int N_job, VectorFunction & grad);
+        /*Same but for mixed BC's Lepingle + GM integrator*/
+        void Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
+             double rho, Stencil & stencil, std::vector<int> & G_j,
+             std::vector<double> & G, double & B, unsigned int Ntray,
+             unsigned int N_job, VectorFunction & grad);
         /*Convergence test for a given parabolic BVP*/
         void Test(std::string filename, Eigen::VectorXd X0, double T_start, 
                   double tolerance, double h0, unsigned int Nsamples);

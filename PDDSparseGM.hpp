@@ -25,6 +25,8 @@
 #define Y_SOUTH 13
 #define Y_EAST 15
 #define Y_WEST 17
+#define INTER_NUMBER 18
+#define INTER_LABELS 19
 #define TAG_Gi 20
 #define TAG_Gj 21
 #define TAG_Gval 22
@@ -129,12 +131,16 @@ class PDDSparseGM{
        std::map<direction, std::vector<std::vector <int> > > Labels_Stencil(int index);
        /*Send node information*/
        void Send_Node(PDDSJob job);
+       /*Send node information*/
+       void Send_Node_Loop(PDDSJob job);
        /*Receive node information*/
        bool Receive_Node(PDDSJob & job);
        /*Sends the stencil data to the worker*/
        void Send_Stencil_Data(int index);
+       void Send_Stencil_Data_Loop(int index);
        /*Receives the stencil data from the server*/
        Stencil Recieve_Stencil_Data(void);
+       Stencil Recieve_Stencil_Data_Loop(void);
        /*Send G matrix and B Matrix*/
        void Send_G_B(void);
        /*Receive G matrix and B Matrix*/
@@ -149,6 +155,8 @@ class PDDSparseGM{
        void Print_solution(BVP bvp);
        /*Prints Domains files*/
        void Print_subdomain(BVP bvp);
+       /*Reading subdomain files routines*/
+       std::vector<double> Read_File(char fname[256]);
     public:
        /*Reads the problem information from a file.*/
        void ReadFromFile(std::string file);
@@ -163,7 +171,7 @@ class PDDSparseGM{
        /*Solves the problem given by the configuration file*/
        void Solve(BVP bvp, std::string file);
        /*Solves the problem given by the configuration file*/
-       void Solve(BVP bvp);
+       void Solve(BVP bvp); 
        /*Prints the problem parameters on screen*/
        void Print_Problem(void); 
        /*Prints the content of the Interface vector on screen*/
@@ -172,5 +180,7 @@ class PDDSparseGM{
        void Read_Solution(void);
        /*Solves subdomains*/
        void Solve_Subdomains(BVP bvp);
+       /*Solves with numerical Variance Reduction after a warm-up fase*/
+       void Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<unsigned int> N_vec);
 };
 #endif

@@ -678,13 +678,13 @@ void PDDSparseGM::Solve(BVP bvp){
                 fprintf(pFile,"%d,%f,%f,%f\n",auxjob.index[0],
                 solver.var_B,solver.APL,(knot_end-knot_start)/60);
                 fclose(pFile);
-                /*pFile = fopen("Output/Debug/G_var.csv","a");
+                pFile = fopen("Output/Debug/G_var.csv","a");
                 for(unsigned int i = 0; i < solver.var_G.size(); i++){
                     fprintf(pFile,"%d,%d,%f\n",auxjob.index[0],
                     G_j_temp[i],solver.var_G[i]);
                 }
                 fclose(pFile);
-                */
+                
             }
         }while(!done);
         pFile = fopen(debug_fname,"a");
@@ -695,7 +695,7 @@ void PDDSparseGM::Solve(BVP bvp){
         fprintf(pFile,"Process %d used %f  hours \n", myid, (end-start)/3600);
         fclose(pFile);
     }
-    MPI_Finalize();
+    //MPI_Finalize();
 }
 void PDDSparseGM::Solve(BVP bvp, std::string file){
 
@@ -723,6 +723,28 @@ void PDDSparseGM::Send_Node(PDDSJob job){
         fprintf(pFile,"Sending node %d.\n",job.index[0]);
         fclose(pFile);
         Send_Stencil_Data(job.index[0]);
+    } else {
+        printf("Ending process.\n");
+    }
+}
+void PDDSparseGM::Send_Node_Loop(PDDSJob job){
+    int work_control_aux[2];
+    MPI_Recv(work_control_aux, 2, MPI_INT, MPI_ANY_SOURCE, REQUEST_NODE, world, &status);
+    MPI_Send(work_control, 2, MPI_INT, status.MPI_SOURCE, REPLY_NODE, world);
+    job.Send_To_Worker(status, world);
+    double pos[2];
+    pos[0] = Node_Position(job.index[0])[0];
+    pos[1] = Node_Position(job.index[0])[1];
+    MPI_Send(pos, 2, MPI_DOUBLE, status.MPI_SOURCE, NODE_POSITION, world);
+    if(work_control[1] == 1){
+        FILE *pFile;
+        pFile = fopen ("Output/Debug/Node_position.txt","a");
+        fprintf(pFile, "%d,%.4f,%.4f \n",job.index[0],pos[0],pos[1]);
+        fclose(pFile);
+        pFile = fopen(debug_fname, "a");
+        fprintf(pFile,"Sending node %d.\n",job.index[0]);
+        fclose(pFile);
+        Send_Stencil_Data_Loop(job.index[0]);
     } else {
         printf("Ending process.\n");
     }
@@ -1069,6 +1091,27 @@ void PDDSparseGM::Send_Stencil_Data(int index){
     MPI_Send(y_west, sizes[3], MPI_DOUBLE, status.MPI_SOURCE, Y_WEST, world);
     delete i_west; delete x_west; delete y_west;
 }
+void PDDSparseGM::Send_Stencil_Data_Loop(int index){
+    std::vector< std::vector<int> > node_interfaces;
+    node_interfaces = Get_Interfaces(index);
+    int aux_size[1];
+    if(node_interfaces.size() == 1){
+        int aux_int[2] = {node_interfaces[0][0], node_interfaces[0][1]};
+        aux_size[0]=2;
+        MPI_Send(aux_size,1,MPI_INT,status.MPI_SOURCE,INTER_NUMBER,world);
+        MPI_Send(aux_int,2,MPI_INT,status.MPI_SOURCE,INTER_LABELS,world);
+    }else{
+        int aux_int[8] = {node_interfaces[0][0], node_interfaces[0][1],
+                          node_interfaces[1][0], node_interfaces[1][1],
+                          node_interfaces[2][0], node_interfaces[2][1],
+                          node_interfaces[3][0], node_interfaces[3][1],
+                        };
+        aux_size[0]=8;
+        MPI_Send(aux_size,1,MPI_INT,status.MPI_SOURCE,INTER_NUMBER,world);
+        MPI_Send(aux_int,8,MPI_INT,status.MPI_SOURCE,INTER_LABELS,world);
+    }
+    Send_Stencil_Data(index);
+}
 bool PDDSparseGM::Receive_Node(PDDSJob & job){
     FILE *dfile;
     MPI_Comm_rank(workers, &workerid);
@@ -1146,6 +1189,167 @@ Stencil PDDSparseGM::Recieve_Stencil_Data(void){
     output.Init(s_index,s_x,s_y,s_params);
     return output;
 }
+Stencil PDDSparseGM::Recieve_Stencil_Data_Loop(void){
+    int size[1];
+    MPI_Recv(size,1,MPI_INT, server, INTER_NUMBER, world, MPI_STATUS_IGNORE);
+    int *Iindexes = new int[size[0]];
+    MPI_Recv(Iindexes,size[0],MPI_INT,server, INTER_LABELS,world,MPI_STATUS_IGNORE);
+    std::vector<std::vector<int>> subd_index;
+    FILE *ox_file, *oy_file, *osol_file;
+    char aux_fname[256];
+    sprintf(aux_fname,"Input/Patch_%d/x_0.txt",myid);
+    if((ox_file = fopen(aux_fname,"w"))==NULL){
+        sprintf(aux_fname,"mkdir -p Input/Patch_%d",myid);
+        system(aux_fname);
+        sprintf(aux_fname,"Input/Patch_%d/x_0.txt",myid);
+        ox_file = fopen(aux_fname,"w");
+    }
+    sprintf(aux_fname,"Input/Patch_%d/x_1.txt",myid);
+    oy_file = fopen(aux_fname,"w");
+    sprintf(aux_fname,"Input/Patch_%d/value.txt",myid);
+    osol_file = fopen(aux_fname,"w");
+    if(size[0] == 2){
+        subd_index.resize(2);
+        subd_index[0].resize(2);
+        subd_index[1].resize(2);
+        if(Iindexes[1]%2== 0){
+            //horizontal patch
+            std::cout << "Horizontal patch\n";
+            subd_index[0][0] = Iindexes[0]; subd_index[0][1] = Iindexes[1]/2;
+            subd_index[1][0] = Iindexes[0]+1; subd_index[1][1] = Iindexes[1]/2;
+            std::vector<double> x_W, x_E;
+            std::vector<double> y_W, y_E;
+            std::vector<double> z_W, z_E;
+            unsigned int i,j;
+            sprintf(aux_fname,"Output/Subdomains/X_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+            x_W = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Y_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+            y_W = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Sol_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+            z_W = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/X_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+            x_E = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Y_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+            y_E = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Sol_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+            z_E = Read_File(aux_fname);
+            for(j = 0; j < y_W.size(); j++){
+                fprintf(oy_file,"%e\n",y_W[j]);
+                for(i = 0; i < x_W.size(); i++){
+                    fprintf(osol_file," %e",z_W[x_W.size()*j + i]);
+                }
+                for(i = 1; i < x_E.size(); i++){
+                    fprintf(osol_file," %e",z_E[x_W.size()*j + i]);
+                }
+                fprintf(osol_file,"\n");
+            }
+            fclose(osol_file);
+            fclose(oy_file);
+            for(i = 0; i < x_W.size(); i++){
+                    fprintf(ox_file,"%e\n",x_W[i]);
+            }
+            for(i = 1; i < x_E.size(); i++){
+                    fprintf(ox_file,"%e\n",x_E[i]);
+            }
+            fclose(ox_file);
+        }else{
+            //vertical patch
+            std::cout << "Vertical patch\n";
+            subd_index[0][0] = Iindexes[0]; subd_index[0][1] = (Iindexes[1]-1)/2;
+            subd_index[1][0] = Iindexes[0]; subd_index[1][1] = 1+((Iindexes[1]-1)/2);
+            std::vector<double> x_N, x_S;
+            std::vector<double> y_N, y_S;
+            std::vector<double> z_N, z_S;
+            unsigned int i,j;
+            sprintf(aux_fname,"Output/Subdomains/X_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+            x_S = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Y_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+            y_S = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Sol_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+            z_S = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/X_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+            x_N = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Y_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+            y_N = Read_File(aux_fname);
+            sprintf(aux_fname,"Output/Subdomains/Sol_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+            z_N = Read_File(aux_fname);
+            for(j = 0; j < y_S.size(); j++){
+                fprintf(oy_file,"%e\n",y_S[j]);
+                for(i = 0; i < x_S.size(); i++){
+                    fprintf(osol_file," %e",z_S[x_S.size()*j + i]);
+                }
+                fprintf(osol_file,"\n");
+            }
+            for(j = 1; j < y_N.size(); j++){
+                fprintf(oy_file,"%e\n",y_N[j]);
+                for(i = 0; i < x_S.size(); i++){
+                    fprintf(osol_file," %e",z_N[x_S.size()*j + i]);
+                }
+                fprintf(osol_file,"\n");
+            }
+            fclose(osol_file);
+            fclose(oy_file);
+            for(i = 0; i < x_S.size(); i++){
+                    fprintf(ox_file," %e\n",x_S[i]);
+            }
+            fclose(ox_file);
+        }
+    }else{
+        //Knot belongs to 4 interfaces (It is on an intersection)
+        std::cout << "Squared patch\n";
+        std::vector<int> aux_index;
+        aux_index.resize(2);
+        subd_index.resize(2);
+        std::vector<double> x_W, x_E;
+        std::vector<double> y_W, y_E;
+        std::vector<double> z_W, z_E;
+        unsigned int i,j,cent = 0;
+        for(int l = 0; l < 8; l = l +2){
+            if(Iindexes[l+1]%2==0){
+                aux_index[0] = Iindexes[l];
+                aux_index[1] = Iindexes[l+1]/2;
+                subd_index[0] = aux_index;
+                aux_index[0] = Iindexes[l] + 1;
+                aux_index[1] = Iindexes[l+1]/2;
+                subd_index[1] = aux_index;
+                i = 0; j = 0;
+                sprintf(aux_fname,"Output/Subdomains/X_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+                x_W = Read_File(aux_fname);
+                sprintf(aux_fname,"Output/Subdomains/Y_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+                y_W = Read_File(aux_fname);
+                sprintf(aux_fname,"Output/Subdomains/Sol_%d%d.txt",subd_index[0][0],subd_index[0][1]);
+                z_W = Read_File(aux_fname);
+                sprintf(aux_fname,"Output/Subdomains/X_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+                x_E = Read_File(aux_fname);
+                sprintf(aux_fname,"Output/Subdomains/Y_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+                y_E = Read_File(aux_fname);
+                sprintf(aux_fname,"Output/Subdomains/Sol_%d%d.txt",subd_index[1][0],subd_index[1][1]);
+                z_E = Read_File(aux_fname);
+                for(j = cent; j < y_W.size(); j++){
+                    fprintf(oy_file,"%e\n",y_W[j]);
+                    for(i = 0; i < x_W.size(); i++){
+                        fprintf(osol_file," %e",z_W[x_W.size()*j + i]);
+                    }
+                    for(i = 1; i < x_E.size(); i++){
+                        fprintf(osol_file," %e",z_E[x_W.size()*j + i]);
+                    }
+                    fprintf(osol_file,"\n");
+                }
+                cent ++;
+            }
+        }
+        fclose(osol_file);
+        fclose(oy_file);
+        for(i = 0; i < x_W.size(); i++){
+                fprintf(ox_file,"%e\n",x_W[i]);
+        }
+        for(i = 1; i < x_E.size(); i++){
+                fprintf(ox_file,"%e\n",x_E[i]);
+        }
+        fclose(ox_file);
+    }
+    return Recieve_Stencil_Data();
+}
 void PDDSparseGM::Send_G_B(void){
     work_control[0] = (int) G.size();
     work_control[1] = (int) B.size();
@@ -1198,7 +1402,7 @@ void PDDSparseGM::Send_G_B(void){
     dfile = fopen(debug_fname,"a");
     fprintf(dfile,"Processor %d ended sending its contribution to G and B\n", workerid);
     fclose(dfile);
-    MPI_Comm_free(&workers);
+    //MPI_Comm_free(&workers);
 }
 void PDDSparseGM::Receive_G_B(void){
     //It ends worker process solving
@@ -1492,5 +1696,165 @@ void PDDSparseGM::Solve_Subdomains(BVP bvp){
             }
         }while(work_control[0] == SEND_WORK);
     }
-    MPI_Finalize();
+    //MPI_Finalize();
+}
+
+void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<unsigned int> N_vec){
+    bool done=true;
+    double start = MPI_Wtime();
+    FILE *pFile;
+    //if(myid==server) Print_Problem();
+    //Compute the PDDSparse Matrix
+    if(myid==server){
+        system("mv Output/solution.csv Output/solution_nvarred.csv");
+        system("mv Output/Debug/B.csv Output/Debug/B_nvarred.csv");
+        system("mv Output/Debug/G.csv Output/Debug/G_nvarred.csv");
+        system("mv Output/Debug/B_var.csv Output/Debug/B_var_nvarred.csv");
+        system("mv Output/Debug/G_var.csv Output/Debug/G_var_nvarred.csv");  
+        pFile = fopen ("Output/Debug/Node_debug.csv","w");
+        fprintf(pFile, "index,var_B,APL,time\n");
+        fclose(pFile);
+        pFile = fopen("Output/Debug/G_var.csv","w");
+        if (pFile == NULL) perror("Failed: ");
+        fprintf(pFile,"G_i,G_j,var_G_ij\n");
+        fclose(pFile);
+        /*
+        std::forward_list<PDDSJob> job_list;
+        std::forward_list<PDDSJob>::iterator it = job_list.before_begin();
+        PDDSJob auxjob;
+        //Job list is fullfilled
+        for(int knot_index = 0; knot_index < nNodes; knot_index++){
+            auxjob.index[0] = knot_index;
+            auxjob.N[0] = N; auxjob.N[1] = N_job;
+            for(int jobs_per_knot = 0; jobs_per_knot < N/N_job; jobs_per_knot ++){
+                it = job_list.insert_after(it, auxjob);
+            }
+        }
+        //Server distributes the work between the workers process
+        do{ 
+            work_control[1] = 1;
+            it = job_list.begin();
+            auxjob = *it;
+            job_list.pop_front();
+            Send_Node(auxjob);
+        }while(! job_list.empty());
+        */
+        PDDSJob auxjob;
+        //Job list is fullfilled
+        for(int knot_index = 0; knot_index < nNodes; knot_index++){
+            auxjob.index[0] = knot_index;
+            //auxjob.N[0] = N_vec[knot_index]; auxjob.N[1] = 10000;
+            auxjob.N[0] = 10000; auxjob.N[1] = 000;
+            for(int jobs_per_knot = 0; jobs_per_knot < N/N_job; jobs_per_knot ++){
+                work_control[1] = 1;
+                Send_Node_Loop(auxjob);
+            }
+        }
+        //G and B are received from the workers
+        for(int process = 0; process < server; process++){
+             Receive_G_B();
+        }
+        Compute_Solution(bvp);
+        pFile = fopen(debug_fname,"a");
+        double end = MPI_Wtime();
+        fprintf(pFile,"Process %d used %f  hours \n", myid, (end-start)/3600);
+        fprintf(pFile,"Process %d ended its work.\n",myid);
+        fclose(pFile);
+    } else {
+        //Start and end time for the node
+        double knot_start, knot_end;
+        //G and B storage vectors for each node
+        double B_temp;
+        PDDSJob auxjob;
+        std::vector<double> G_temp;
+        std::vector<int>  G_j_temp;
+        //Stencil
+        Stencil stencil;
+        VectorFunction grad;
+        std::stringstream dirname;
+        dirname << "Input/Patch_"<<myid;
+        GMSolver solver(bvp ,parameters, h0, (unsigned int) myid +1);
+        c2 = pow(fac*(1.0/nN[0]),2.0);
+        do{
+            done = Receive_Node(auxjob);
+            if(!done){
+                knot_start = MPI_Wtime();
+                B_temp = 0.0;
+                G_j_temp.clear();
+                G_temp.clear();
+                stencil = Recieve_Stencil_Data_Loop();
+                stencil.Compute_ipsi(bvp,c2,debug_fname);
+                grad.Init(2,dirname.str());
+                //std::cout << "(F-F_lut).norm" << (bvp.F.Value(position,0.0) - (-(bvp.sigma.Value(position,0.0)).transpose()*grad.Value(position,0.0))).norm() << std::endl;
+                //stencil.Print(auxjob.index[0]);
+                if(stencil.Is_Interior()){ 
+                    printf("Knot %d is interior\n",auxjob.index[0]);
+                    solver.Solve(position,c2,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1],grad);
+                }else{
+                    printf("Knot %d is exterior\n",auxjob.index[0]);
+                    solver.Solve_mix(position,c2,1.0,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1],grad);
+                }
+                B.push_back(B_temp);
+                B_i.push_back(auxjob.index[0]);
+                B_var.push_back(solver.var_B);
+                for(unsigned int k = 0;k < G_temp.size(); k ++){
+                    G_i.push_back(auxjob.index[0]);
+                    G_j.push_back(G_j_temp[k]);
+                    G.push_back(G_temp[k]);
+                    G_var.push_back(solver.var_G[k]);
+                }
+                knot_end = MPI_Wtime();
+                pFile = fopen("Output/Debug/Node_debug.csv","a");
+                fprintf(pFile,"%d,%f,%f,%f\n",auxjob.index[0],
+                solver.var_B,solver.APL,(knot_end-knot_start)/60);
+                fclose(pFile);
+                pFile = fopen("Output/Debug/G_var.csv","a");
+                for(unsigned int i = 0; i < solver.var_G.size(); i++){
+                    fprintf(pFile,"%d,%d,%f\n",auxjob.index[0],
+                    G_j_temp[i],solver.var_G[i]);
+                }
+                fclose(pFile);
+            }
+        }while(!done);
+        pFile = fopen(debug_fname,"a");
+        fprintf(pFile,"Process %d is done solving nodes \n", myid);
+        Send_G_B();
+        fprintf(pFile,"Process %d is done sending G \n", myid);
+        double end = MPI_Wtime();
+        fprintf(pFile,"Process %d used %f  hours \n", myid, (end-start)/3600);
+        fclose(pFile);
+        MPI_Comm_free(&workers);
+    }
+    //MPI_Finalize();
+}
+
+std::vector<double> PDDSparseGM::Read_File(char fname[256]){
+    std::vector<double> output;
+    char *line_buf = NULL;
+    size_t line_buf_size = 0;
+    int line_count = 0;
+    ssize_t line_size;
+    FILE *fp = fopen(fname, "r");
+    if (!fp)
+    {
+        fprintf(stderr, "Error opening file '%s'\n", fname);
+        return output;
+    }
+    /* Get the first line of the file. */
+    line_size = getline(&line_buf, &line_buf_size, fp);
+    /* Loop through until we are done with the file. */
+    while (line_size > 0)
+    {
+        /* Increment our line count */
+        line_count++;
+        /* Show the line details */
+        output.push_back(atof(line_buf));
+        /* Get the next line */
+        line_size = getline(&line_buf, &line_buf_size, fp);
+    }
+   /* Free the allocated line buffer */
+   free(line_buf);
+   line_buf = NULL;
+   fclose(fp);
+   return output;
 }

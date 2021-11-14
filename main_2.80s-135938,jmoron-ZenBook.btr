@@ -1,0 +1,11 @@
+
+main_2:135938 terminated with signal 6 at PC=7fdfa0ea618b SP=7fffb184b6a0.  Backtrace:
+/lib/x86_64-linux-gnu/libc.so.6(gsignal+0xcb)[0x7fdfa0ea618b]
+/lib/x86_64-linux-gnu/libc.so.6(abort+0x12b)[0x7fdfa0e85859]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x9e911)[0x7fdfa125c911]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xaa38c)[0x7fdfa126838c]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xaa3f7)[0x7fdfa12683f7]
+./main_2(+0x8eccb)[0x55c421f98ccb]
+./main_2(+0x54d9)[0x55c421f0f4d9]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0x7fdfa0e870b3]
+./main_2(+0x502e)[0x55c421f0f02e]

@@ -60,6 +60,7 @@ void LookUpTable::Init(int dim, std::string file){
     }
     //It's values are stored in z
     z = new double[mesh_size];
+    //std::cout << "len[0] " << len[0] << " len[1] " << len[1] << " mesh_size "<< mesh_size << std::endl;
     while (getline( infile, line )){
         
         it = line.begin();
@@ -74,6 +75,7 @@ void LookUpTable::Init(int dim, std::string file){
                 cent += *it;
                 it ++;
             }
+            //std::cout << cent << std::endl;
             z[counter[1] * len[0] + counter[0]] = std::stod(cent);
             counter[0]++;
             cent.clear();

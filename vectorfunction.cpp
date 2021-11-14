@@ -37,11 +37,11 @@ Eigen::VectorXd VectorFunction::Value(Eigen::VectorXd position, double t){
         out(i) = lookuptable[i].Eval(position);
     }
     */
-   Eigen::VectorXd F;
-   F.resize(2);
-   F(0) = lookuptable.Dx(position)*1.41421356237;
-   F(1) = lookuptable.Dy(position)*1.41421356237;
-   return -F;
+   Eigen::VectorXd grad;
+   grad.resize(2);
+   grad(0) = lookuptable.Dx(position);
+   grad(1) = lookuptable.Dy(position);
+   return grad;
 }
 
 Eigen::VectorXd Default_Vector(Eigen::VectorXd position, double t){

@@ -47,6 +47,7 @@ b_north = find(yy==y_north(1));
 rhs(b_north) = interp1(x_north,sol_north, xx(b_north),'spline');
 b_south = find(yy==y_south(1));
 rhs(b_south) = interp1(x_south,sol_south, xx(b_south),'spline');
+%rhs(b) = sin(omegax*pi*xx(b) + omegay*pi*yy(b)) + cos(omegapx*pi*xx(b) + omegapy*pi*yy(b));
 % Solve Poisson equation, reshape to 2D, and plot:
 u = L\rhs; uu = reshape(u,N+1,N+1);
 file = sprintf("Output/Subdomains/X_%s%s.txt", args{2},args{3})
@@ -54,6 +55,7 @@ save("-ascii",file,"x")
 file = sprintf("Output/Subdomains/Y_%s%s.txt", args{2},args{3})
 save("-ascii",file,"y")
 file = sprintf("Output/Subdomains/Sol_%s%s.txt", args{2},args{3})
+u = (uu')(:);
 save("-ascii",file,"u")
 %[xx,yy] = meshgrid(x,y);
 %[xxx,yyy] = meshgrid(-1:.04:1,-1:.04:1);
