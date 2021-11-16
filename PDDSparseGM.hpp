@@ -31,9 +31,11 @@
 #define TAG_Gj 21
 #define TAG_Gval 22
 #define TAG_Gvar 23
+#define TAG_GCT 24
 #define TAG_Bi 30
 #define TAG_Bval 31
 #define TAG_Bvar 32
+#define TAG_BCT 33
 #define TODO_JOB_UINT  101
 #define TODO_JOB_INT  102
 #define TODO_JOB_DOUBLE 103
@@ -101,28 +103,29 @@ class PDDSparseGM{
           -constant of the RBF interpolator 
           */
         double h0, T_start, eps, fac, c2;
-        std::vector<int> h_vec;
         std::vector<double> parameters;
         /*-SW is the south west point of the domain.
           -NE is the north east point of the domain.
+          -Sol is the vector of solutions
         */
-       Eigen::VectorXd SW, NE;
+       Eigen::VectorXd SW, NE, knot_solutions;
        /*G and B storage vector*/
-       std::vector<double> G, B, G_var, B_var;
+       std::vector<double> G, G_CT, B, B_CT, G_var, B_var;
        std::vector<int>  G_j, G_i, B_i;
        /*Triplet's vector*/
-       std::vector<T> T_vec_G, T_vec_Gvar, T_vec_B, T_vec_Bvar;
+       std::vector<T> T_vec_G, T_vec_Gvar, T_vec_GCT, T_vec_B, T_vec_Bvar, T_vec_BCT;
         /*
           -N is the initial number of trayectories 
         */
        int N, N_job, nNodes;
-       std::vector<int> N_vec;
        /*Stencil of the node*/
        Stencil node_stencil;
        /*Position of the Node being solver*/
        Eigen::VectorXd position;
        /*Filename of the Flux DEBUG File*/
        char debug_fname[256];
+       Eigen::SparseMatrix<double> G_sparse_var;
+       Eigen::VectorXd bias;
        /*Starts the MPI values and structures*/
        void MPI_Configuration(int argc, char *argv[]);
        /*Returns the interfaces the node belongst to*/
@@ -143,10 +146,16 @@ class PDDSparseGM{
        Stencil Recieve_Stencil_Data_Loop(void);
        /*Send G matrix and B Matrix*/
        void Send_G_B(void);
+       /*Send 2 Gmatrix and 2 BMatrix*/
+       void Send_G_B_2(void);
        /*Receive G matrix and B Matrix*/
        void Receive_G_B(void);
+       /*Send 2 Gmatrix and 2 BMatrix*/
+       void Receive_G_B_2(void);
        /*Having G and B as triplets, computes the solution for the PDDS problem*/
        void Compute_Solution(BVP bvp);
+       /*Having 2 Gs and 2 Bs as triplets, computes the solution for the PDDS problem*/
+       void Compute_Solution_2(BVP bvp);
        /*Position of a given node*/
        Eigen::VectorXd Node_Position(int node_index);
        /*Prints metadata file*/
@@ -180,7 +189,9 @@ class PDDSparseGM{
        void Read_Solution(void);
        /*Solves subdomains*/
        void Solve_Subdomains(BVP bvp);
+       /*Computes the optimal h and N given a bias and variance estimation*/
+       void Compute_h_N(BVP bvp, double eps, std::vector<double> & h, std::vector<int> & N);
        /*Solves with numerical Variance Reduction after a warm-up fase*/
-       void Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<unsigned int> N_vec);
+       void Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<int> N_vec);
 };
 #endif

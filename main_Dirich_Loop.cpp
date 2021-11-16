@@ -13,9 +13,6 @@ int main(int argc, char *argv[]){
     std::map<std::string, std::string> string_init;
     //BVP initialization 
     scalar_init["f"] = Equation_f;
-    //scalarN_init["psi"] = Equation_Psi;
-    //scalarN_init["varphi"] = Equation_Varphi;
-    //vector_init["F"] = Equation_F;
     scalar_init["c"] = Equation_c;
     scalar_init["u"] = Equation_u;
     scalar_init["g"] = Equation_g;
@@ -24,12 +21,10 @@ int main(int argc, char *argv[]){
     bvp.Boundary_init(Rectangle2D, Stopping);
     bvp.BVP_init(2,scalar_init,scalarN_init,vector_init, matrix_init,string_init, Equation_RBF);
     PDDS.Solve(bvp);
-    //vector_init["F"] = Equation_F;
-    bvp.Boundary_init(Rectangle2D, Stopping);
-    bvp.BVP_init(2,scalar_init,scalarN_init,vector_init, matrix_init,string_init, Equation_RBF);
     PDDS.Solve_Subdomains(bvp);
     std::vector<double> h_vec;
-    std::vector<unsigned int> N_vec;
+    std::vector<int> N_vec;
+    PDDS.Compute_h_N(bvp,0.02,h_vec,N_vec);
     PDDS.Solve_NumVR(bvp, h_vec,N_vec);
     return 0;
     MPI_Finalize();

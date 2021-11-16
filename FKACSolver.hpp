@@ -33,7 +33,7 @@ protected:
       -params stores the parameters of the surface
       -sums stores important quantities to compute statistical measurements
       -sola_a stores the analytic solution if available.*/
-    double t, h, sqrth, Y, Z, ji_t, xi, *params, sums[10], sol, sol_0;
+    double t, Y, Z, ji_t, xi, *params, sums[10], sol, sol_0;
     /*-N: Normal vector to the boundary.
       -X: Position.
       -Variance reduction mu function.
@@ -67,7 +67,7 @@ public:
       -absolute error (with sign)
       -relative error (with sign)
       -mean square error */
-    double mean, var, std, err, rerr, mse, covar, var_xi, pearson_c, sol_a;
+    double h, sqrth, mean, var, std, err, rerr, mse, covar, var_xi, pearson_c, sol_a;
     /*-Number of calls to the random number generator.
       -Number of trayectories computed.
     */

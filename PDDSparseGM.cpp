@@ -116,16 +116,7 @@ void PDDSparseGM::ReadFromFile(std::string file){
                                 it++;
 
                             }
-                            FILE *pf;
-                            if (FILE *pf = fopen(cent.c_str(), "r")) {
-                                 char chunk[128];
-                                 while(fgets(chunk, sizeof(chunk), pf) != NULL) {
-                                    h_vec.push_back(atof(chunk));
-                                 }
-                                fclose(pf);
-                            } else {
-                                 h0 = atof(cent.c_str());
-                            }   
+                            h0 = atof(cent.c_str());
                             break;
                         }
                         if(cent == "eps="){
@@ -254,16 +245,7 @@ void PDDSparseGM::ReadFromFile(std::string file){
                                 it++;
 
                             }
-                            FILE *pf;
-                            if (FILE *pf = fopen(cent.c_str(), "r")) {
-                                 char chunk[128];
-                                 while(fgets(chunk, sizeof(chunk), pf) != NULL) {
-                                  N_vec.push_back(atoi(chunk));
-                                 }
-                                fclose(pf);
-                            } else {
-                                N = atoi(cent.c_str());
-                            }   
+                                N = atoi(cent.c_str()); 
                             break;
                         }
                         if(cent == "N_job="){
@@ -586,34 +568,7 @@ void PDDSparseGM::Solve(BVP bvp){
     if(myid==server) Print_Problem();
     //Compute the PDDSparse Matrix
     if(myid==server){
-        pFile = fopen ("Output/Debug/Node_debug.csv","w");
-        fprintf(pFile, "index,var_B,APL,time\n");
-        fclose(pFile);
-         /*
-        pFile = fopen("Output/Debug/G_var.csv","w");
-        if (pFile == NULL) perror("Failed: ");
-        fprintf(pFile,"G_i,G_j,var_G_ij\n");
-        fclose(pFile);
-        std::forward_list<PDDSJob> job_list;
-        std::forward_list<PDDSJob>::iterator it = job_list.before_begin();
-        PDDSJob auxjob;
-        //Job list is fullfilled
-        for(int knot_index = 0; knot_index < nNodes; knot_index++){
-            auxjob.index[0] = knot_index;
-            auxjob.N[0] = N; auxjob.N[1] = N_job;
-            for(int jobs_per_knot = 0; jobs_per_knot < N/N_job; jobs_per_knot ++){
-                it = job_list.insert_after(it, auxjob);
-            }
-        }
-        //Server distributes the work between the workers process
-        do{ 
-            work_control[1] = 1;
-            it = job_list.begin();
-            auxjob = *it;
-            job_list.pop_front();
-            Send_Node(auxjob);
-        }while(! job_list.empty());
-        */
+
         PDDSJob auxjob;
         //Job list is fullfilled
         for(int knot_index = 0; knot_index < nNodes; knot_index++){
@@ -626,9 +581,9 @@ void PDDSparseGM::Solve(BVP bvp){
         }
         //G and B are received from the workers
         for(int process = 0; process < server; process++){
-             Receive_G_B();
+             Receive_G_B_2();
         }
-        Compute_Solution(bvp);
+        Compute_Solution_2(bvp);
         pFile = fopen(debug_fname,"a");
         double end = MPI_Wtime();
         fprintf(pFile,"Process %d used %f  hours \n", myid, (end-start)/3600);
@@ -646,6 +601,8 @@ void PDDSparseGM::Solve(BVP bvp){
         Stencil stencil;
         GMSolver solver(bvp ,parameters, h0, (unsigned int) myid +1);
         c2 = pow(fac*(1.0/nN[0]),2.0);
+        G_i.clear();G_j.clear(); G.clear(); G_CT.clear(); G_var.clear();
+        B.clear();B_CT.clear();B_i.clear();B_var.clear();
         do{
             done = Receive_Node(auxjob);
             if(!done){
@@ -656,44 +613,29 @@ void PDDSparseGM::Solve(BVP bvp){
                 G_temp.clear();
                 stencil = Recieve_Stencil_Data();
                 stencil.Compute_ipsi(bvp,c2,debug_fname);
-                //stencil.Print(auxjob.index[0]);
                 if(stencil.Is_Interior()){ 
-                    printf("Knot %d is interior\n",auxjob.index[0]);
                     solver.Solve(position,c2,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
                 }else{
-                    printf("Knot %d is exterior\n",auxjob.index[0]);
                     solver.Solve_mix(position,c2,1.0,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1]);
                 }
                 B.push_back(B_temp);
+                B_CT.push_back(solver.B_CT);
                 B_i.push_back(auxjob.index[0]);
                 B_var.push_back(solver.var_B);
                 for(unsigned int k = 0;k < G_temp.size(); k ++){
                     G_i.push_back(auxjob.index[0]);
                     G_j.push_back(G_j_temp[k]);
                     G.push_back(G_temp[k]);
+                    G_CT.push_back(solver.G_CT[k]);
                     G_var.push_back(solver.var_G[k]);
                 }
                 knot_end = MPI_Wtime();
-                pFile = fopen("Output/Debug/Node_debug.csv","a");
-                fprintf(pFile,"%d,%f,%f,%f\n",auxjob.index[0],
-                solver.var_B,solver.APL,(knot_end-knot_start)/60);
-                fclose(pFile);
-                pFile = fopen("Output/Debug/G_var.csv","a");
-                for(unsigned int i = 0; i < solver.var_G.size(); i++){
-                    fprintf(pFile,"%d,%d,%f\n",auxjob.index[0],
-                    G_j_temp[i],solver.var_G[i]);
-                }
-                fclose(pFile);
                 
             }
         }while(!done);
         pFile = fopen(debug_fname,"a");
-        fprintf(pFile,"Process %d is done solving nodes \n", myid);
-        Send_G_B();
-        fprintf(pFile,"Process %d is done sending G \n", myid);
+        Send_G_B_2();
         double end = MPI_Wtime();
-        fprintf(pFile,"Process %d used %f  hours \n", myid, (end-start)/3600);
-        fclose(pFile);
     }
     //MPI_Finalize();
 }
@@ -1404,6 +1346,69 @@ void PDDSparseGM::Send_G_B(void){
     fclose(dfile);
     //MPI_Comm_free(&workers);
 }
+void PDDSparseGM::Send_G_B_2(void){
+    work_control[0] = (int) G.size();
+    work_control[1] = (int) B.size();
+    MPI_Send(work_control, 2, MPI_INT, server, REQUEST_NODE, world);
+    //G_i is sent
+    int *G_i_aux;
+    G_i_aux = new int[work_control[0]];
+    for(int i = 0; i < work_control[0]; i++) G_i_aux[i] = G_i[i];
+    G_i.resize(0);
+    MPI_Send(G_i_aux, work_control[0], MPI_INT, server, TAG_Gi, world);
+    delete G_i_aux;
+    //G_j is sent
+    int *G_j_aux;
+    G_j_aux = new int[work_control[0]];
+    for(int i = 0; i < work_control[0]; i++) G_j_aux[i] = G_j[i];
+    G_j.resize(0);
+    MPI_Send(G_j_aux, work_control[0], MPI_INT, server, TAG_Gj, world);
+    delete G_j_aux;
+    //G_val is sent
+    double *G_aux;
+    G_aux = new double[work_control[0]];
+    for(int i = 0; i < work_control[0]; i++){
+         G_aux[i] = G[i];
+    }
+    G.resize(0);
+    MPI_Send(G_aux, work_control[0], MPI_DOUBLE, server,TAG_Gval, world);
+    for(int i = 0; i < work_control[0]; i++){
+         G_aux[i] = G_var[i];
+    }
+    G_var.resize(0);
+    MPI_Send(G_aux, work_control[0], MPI_DOUBLE, server,TAG_Gvar, world);
+    for(int i = 0; i < work_control[0]; i++){
+         G_aux[i] = G_CT[i];
+    }
+    G_CT.resize(0);
+    MPI_Send(G_aux, work_control[0], MPI_DOUBLE, server,TAG_GCT, world);
+    delete G_aux;
+    //B_i is sent
+    int *B_i_aux;
+    B_i_aux = new int[work_control[1]];
+    for(int i = 0; i < work_control[1]; i++) B_i_aux[i] = B_i[i];
+    B_i.resize(0);
+    MPI_Send(B_i_aux, work_control[1], MPI_INT, server, TAG_Bi, world);
+    delete B_i_aux;
+    //B is sent
+    double *B_aux;
+    B_aux = new double[work_control[1]];
+    for(int i = 0; i < work_control[1]; i++) B_aux[i] = B[i];
+    B.resize(0);
+    MPI_Send(B_aux, work_control[1], MPI_DOUBLE, server, TAG_Bval, world);
+    for(int i = 0; i < work_control[1]; i++) B_aux[i] = B_var[i];
+    B_var.resize(0);
+    MPI_Send(B_aux, work_control[1], MPI_DOUBLE, server, TAG_Bvar, world);
+    for(int i = 0; i < work_control[1]; i++) B_aux[i] = B_CT[i];
+    B_CT.resize(0);
+    MPI_Send(B_aux, work_control[1], MPI_DOUBLE, server, TAG_BCT, world);
+    delete B_aux;
+    FILE *dfile;
+    dfile = fopen(debug_fname,"a");
+    fprintf(dfile,"Processor %d ended sending its contribution to G and B\n", workerid);
+    fclose(dfile);
+    //MPI_Comm_free(&workers);
+}
 void PDDSparseGM::Receive_G_B(void){
     //It ends worker process solving
     MPI_Recv(work_control, 2, MPI_INT, MPI_ANY_SOURCE, 
@@ -1466,6 +1471,84 @@ void PDDSparseGM::Receive_G_B(void){
     for(int i = 0; i < work_control[1]; i++) B[i] = B_aux[i];
     for(int j = 0; j < work_control[1]; j++){
         T_vec_Bvar.push_back(T(B_i[j], 0, B[j]));
+    }
+    delete B_aux;
+}
+void PDDSparseGM::Receive_G_B_2(void){
+    //It ends worker process solving
+    MPI_Recv(work_control, 2, MPI_INT, MPI_ANY_SOURCE, 
+    REQUEST_NODE, world, &status);
+    work_control[0] = 0;
+    work_control[1] = 0;
+    MPI_Send(work_control, 2, MPI_INT, status.MPI_SOURCE, REPLY_NODE, world);
+    //The server accumulates the values of G and B
+    MPI_Recv(work_control, 2, MPI_INT, status.MPI_SOURCE, REQUEST_NODE, world, &status);
+    G.resize(work_control[0]);
+    G_i.resize(work_control[0]);
+    G_j.resize(work_control[0]);
+    //G_i is received
+    int *G_i_aux, *G_j_aux;
+    double *G_aux;
+    G_i_aux = new int[work_control[0]];
+    MPI_Recv(G_i_aux, work_control[0], MPI_INT, status.MPI_SOURCE, TAG_Gi, world, &status);
+    for(int i = 0; i < work_control[0]; i++) G_i[i] = G_i_aux[i];
+    delete G_i_aux;
+    //G_j is received
+    G_j_aux = new int[work_control[0]];
+    MPI_Recv(G_j_aux, work_control[0], MPI_INT, status.MPI_SOURCE, TAG_Gj, world, &status);
+    for(int i = 0; i < work_control[0]; i++) G_j[i] = G_j_aux[i];
+    delete G_j_aux;
+    //G is received
+    G_aux = new double[work_control[0]];
+    MPI_Recv(G_aux, work_control[0], MPI_DOUBLE, status.MPI_SOURCE, TAG_Gval, world, &status);
+    for(int i = 0; i < work_control[0]; i++) G[i] = G_aux[i];
+    //Triplets vector is fullfilled
+    for(int j = 0; j < work_control[0]; j++){
+        T_vec_G.push_back(T(G_i[j], G_j[j], G[j]));
+    }
+    //G_var is received 
+    MPI_Recv(G_aux, work_control[0], MPI_DOUBLE, status.MPI_SOURCE, TAG_Gvar, world, &status);
+    for(int i = 0; i < work_control[0]; i++) G[i] = G_aux[i];
+    for(int j = 0; j < work_control[0]; j++){
+        T_vec_Gvar.push_back(T(G_i[j], G_j[j], G[j]));
+    }
+    //G_CT is received 
+     MPI_Recv(G_aux, work_control[0], MPI_DOUBLE, status.MPI_SOURCE, TAG_GCT, world, &status);
+    for(int i = 0; i < work_control[0]; i++) G[i] = G_aux[i];
+    for(int j = 0; j < work_control[0]; j++){
+        T_vec_GCT.push_back(T(G_i[j], G_j[j], G[j]));
+    }
+    delete G_aux;
+    G.resize(0);
+    G_i.resize(0);
+    G_j.resize(0);
+    B.resize(work_control[1]);
+    B_i.resize(work_control[1]);
+    double *B_aux;
+    int *B_i_aux;
+    //B_i is received
+    B_i_aux = new int[work_control[1]];
+    MPI_Recv(B_i_aux, work_control[1], MPI_INT, status.MPI_SOURCE, TAG_Bi, world, &status);
+    for(int i = 0; i< work_control[1]; i++) B_i[i] = B_i_aux[i];
+    delete B_i_aux;
+    //B is received
+    B_aux = new double[work_control[1]];
+    MPI_Recv(B_aux, work_control[1], MPI_DOUBLE, status.MPI_SOURCE, TAG_Bval, world, &status);
+    for(int i = 0; i < work_control[1]; i++) B[i] = B_aux[i];
+    for(int j = 0; j < work_control[1]; j++){
+        T_vec_B.push_back(T(B_i[j], 0, B[j]));
+    }
+    //B_var is received
+    MPI_Recv(B_aux, work_control[1], MPI_DOUBLE, status.MPI_SOURCE, TAG_Bvar, world, &status);
+    for(int i = 0; i < work_control[1]; i++) B[i] = B_aux[i];
+    for(int j = 0; j < work_control[1]; j++){
+        T_vec_Bvar.push_back(T(B_i[j], 0, B[j]));
+    }
+    //B_CT is received
+    MPI_Recv(B_aux, work_control[1], MPI_DOUBLE, status.MPI_SOURCE, TAG_BCT, world, &status);
+    for(int i = 0; i < work_control[1]; i++) B[i] = B_aux[i];
+    for(int j = 0; j < work_control[1]; j++){
+        T_vec_BCT.push_back(T(B_i[j], 0, B[j]));
     }
     delete B_aux;
 }
@@ -1553,6 +1636,109 @@ void PDDSparseGM::Compute_Solution(BVP bvp){
         rerr = fabs(err)/sol;
         fprintf(ofile,"%d,%e,%e,%e,%e,%e,%e\n",i,Node_Position(i)[0],Node_Position(i)[1],
         sol,ud(i),err,rerr);
+    }
+    fclose(ofile);
+}
+void PDDSparseGM::Compute_Solution_2(BVP bvp){
+    Eigen::SparseMatrix<double> G_sparse, I_sparse, B_sparse;
+    unsigned int size = (unsigned int) nNodes;
+    FILE *ofile;
+    G_sparse.resize(size, size);
+    G_sparse.setFromTriplets(T_vec_Gvar.begin(),T_vec_Gvar.end());
+    T_vec_Gvar.resize(0);
+    G_sparse_var = G_sparse;
+    ofile = fopen("Output/Debug/G_var.csv","w");
+    fprintf(ofile, "Gvar_i,Gvar_j,Gvar_ij\n");
+    for (int k=0; k<G_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(G_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    G_sparse.resize(size, size);
+    G_sparse.setFromTriplets(T_vec_G.begin(),T_vec_G.end());
+    T_vec_G.resize(0);
+    I_sparse.resize(size, size);
+    I_sparse.setIdentity();
+    G_sparse+=I_sparse;
+    ofile = fopen("Output/Debug/G.csv","w");
+    fprintf(ofile, "G_i,G_j,G_ij\n");
+    for (int k=0; k<G_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(G_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    fclose(ofile);
+    B_sparse.resize(size, 1);
+    B_sparse.setFromTriplets(T_vec_Bvar.begin(), T_vec_Bvar.end());
+    T_vec_Bvar.resize(0);
+    ofile = fopen("Output/Debug/B_var.csv","w");
+    fprintf(ofile, "B_i,B_j,B_ij\n");
+    for (int k=0; k<B_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(B_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    fclose(ofile);
+    B_sparse.resize(size, 1);
+    B_sparse.setFromTriplets(T_vec_B.begin(), T_vec_B.end());
+    T_vec_B.resize(0);
+    ofile = fopen("Output/Debug/B.csv","w");
+    fprintf(ofile, "B_i,B_j,B_ij\n");
+    for (int k=0; k<B_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(B_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    fclose(ofile);
+    Eigen::VectorXd ud,ud_CT,Bd,guess;
+    Bd = Eigen::VectorXd(B_sparse);
+    guess = Bd*0;
+    B_sparse.resize(0,0);
+    /*Eigen::SparseLU<Eigen::SparseMatrix<double> > solver_LU;
+    solver_LU.compute(G_sparse);
+    solver_LU.factorize(G_sparse);
+    ud = solver_LU.solve(Bd);*/
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver_IT;
+    solver_IT.compute(G_sparse);
+    ud = solver_IT.solveWithGuess(Bd,guess);
+    knot_solutions = ud;
+    G_sparse.resize(size, size);
+    G_sparse.setFromTriplets(T_vec_GCT.begin(),T_vec_GCT.end());
+    G_sparse+=I_sparse;
+    I_sparse.resize(0,0);
+    ofile = fopen("Output/Debug/G_CT.csv","w");
+    fprintf(ofile, "G_i,G_j,G_ij\n");
+    for (int k=0; k<G_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(G_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    fclose(ofile);
+    T_vec_GCT.resize(0);
+    B_sparse.resize(size, 1);
+    B_sparse.setFromTriplets(T_vec_BCT.begin(), T_vec_BCT.end());
+    T_vec_BCT.resize(0);
+    ofile = fopen("Output/Debug/B_CT.csv","w");
+    fprintf(ofile, "B_i,B_j,B_ij\n");
+    for (int k=0; k<B_sparse.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(B_sparse,k); it; ++it)
+        {
+            fprintf(ofile,"%ld,%ld,%e\n",it.row(),it.col(),it.value());
+        }
+    fclose(ofile);
+    solver_IT.compute(G_sparse);
+    Bd = Eigen::VectorXd(B_sparse);
+    ud_CT = solver_IT.solveWithGuess(Bd,guess);
+    bias = (ud-ud_CT).cwiseAbs();
+    ofile = fopen("Output/solution.csv","w");
+    fprintf(ofile,"Knot_index,x,y,sol_analytic,sol_PDDS,err,rerr,sbias\n");
+    double sol, err, rerr;
+    for(int i = 0; i< (int)ud.size(); i++){
+        sol = bvp.u.Value(Node_Position(i),T_start);
+        err = ud(i) - sol;
+        rerr = fabs(err)/sol;
+        fprintf(ofile,"%d,%e,%e,%e,%e,%e,%e,%e\n",i,Node_Position(i)[0],Node_Position(i)[1],
+        sol,ud(i),err,rerr,bias(i));
     }
     fclose(ofile);
 }
@@ -1698,8 +1884,7 @@ void PDDSparseGM::Solve_Subdomains(BVP bvp){
     }
     //MPI_Finalize();
 }
-
-void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<unsigned int> N_vec){
+void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<int> N_vec){
     bool done=true;
     double start = MPI_Wtime();
     FILE *pFile;
@@ -1709,43 +1894,17 @@ void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<un
         system("mv Output/solution.csv Output/solution_nvarred.csv");
         system("mv Output/Debug/B.csv Output/Debug/B_nvarred.csv");
         system("mv Output/Debug/G.csv Output/Debug/G_nvarred.csv");
+        system("mv Output/Debug/B_CT.csv Output/Debug/B_CT_nvarred.csv");
+        system("mv Output/Debug/G_CT.csv Output/Debug/G_CT_nvarred.csv");
         system("mv Output/Debug/B_var.csv Output/Debug/B_var_nvarred.csv");
         system("mv Output/Debug/G_var.csv Output/Debug/G_var_nvarred.csv");  
-        pFile = fopen ("Output/Debug/Node_debug.csv","w");
-        fprintf(pFile, "index,var_B,APL,time\n");
-        fclose(pFile);
-        pFile = fopen("Output/Debug/G_var.csv","w");
-        if (pFile == NULL) perror("Failed: ");
-        fprintf(pFile,"G_i,G_j,var_G_ij\n");
-        fclose(pFile);
-        /*
-        std::forward_list<PDDSJob> job_list;
-        std::forward_list<PDDSJob>::iterator it = job_list.before_begin();
-        PDDSJob auxjob;
-        //Job list is fullfilled
-        for(int knot_index = 0; knot_index < nNodes; knot_index++){
-            auxjob.index[0] = knot_index;
-            auxjob.N[0] = N; auxjob.N[1] = N_job;
-            for(int jobs_per_knot = 0; jobs_per_knot < N/N_job; jobs_per_knot ++){
-                it = job_list.insert_after(it, auxjob);
-            }
-        }
-        //Server distributes the work between the workers process
-        do{ 
-            work_control[1] = 1;
-            it = job_list.begin();
-            auxjob = *it;
-            job_list.pop_front();
-            Send_Node(auxjob);
-        }while(! job_list.empty());
-        */
         PDDSJob auxjob;
         //Job list is fullfilled
         for(int knot_index = 0; knot_index < nNodes; knot_index++){
             auxjob.index[0] = knot_index;
             //auxjob.N[0] = N_vec[knot_index]; auxjob.N[1] = 10000;
-            auxjob.N[0] = 10000; auxjob.N[1] = 000;
-            for(int jobs_per_knot = 0; jobs_per_knot < N/N_job; jobs_per_knot ++){
+            auxjob.N[0] = N_vec[knot_index]; auxjob.N[1] = N_job; auxjob.h[0] = h_vec[knot_index];
+            for(int jobs_per_knot = 0; jobs_per_knot < N_vec[knot_index]/N_job; jobs_per_knot ++){
                 work_control[1] = 1;
                 Send_Node_Loop(auxjob);
             }
@@ -1754,12 +1913,8 @@ void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<un
         for(int process = 0; process < server; process++){
              Receive_G_B();
         }
-        Compute_Solution(bvp);
-        pFile = fopen(debug_fname,"a");
+        Compute_Solution_2(bvp);
         double end = MPI_Wtime();
-        fprintf(pFile,"Process %d used %f  hours \n", myid, (end-start)/3600);
-        fprintf(pFile,"Process %d ended its work.\n",myid);
-        fclose(pFile);
     } else {
         //Start and end time for the node
         double knot_start, knot_end;
@@ -1775,6 +1930,8 @@ void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<un
         dirname << "Input/Patch_"<<myid;
         GMSolver solver(bvp ,parameters, h0, (unsigned int) myid +1);
         c2 = pow(fac*(1.0/nN[0]),2.0);
+        G_i.clear();G_j.clear(); G.clear(); G_CT.clear(); G_var.clear();
+        B.clear();B_CT.clear();B_i.clear();B_var.clear();
         do{
             done = Receive_Node(auxjob);
             if(!done){
@@ -1785,8 +1942,7 @@ void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<un
                 stencil = Recieve_Stencil_Data_Loop();
                 stencil.Compute_ipsi(bvp,c2,debug_fname);
                 grad.Init(2,dirname.str());
-                //std::cout << "(F-F_lut).norm" << (bvp.F.Value(position,0.0) - (-(bvp.sigma.Value(position,0.0)).transpose()*grad.Value(position,0.0))).norm() << std::endl;
-                //stencil.Print(auxjob.index[0]);
+                solver.h = auxjob.h[0];
                 if(stencil.Is_Interior()){ 
                     printf("Knot %d is interior\n",auxjob.index[0]);
                     solver.Solve(position,c2,stencil,G_j_temp,G_temp,B_temp,auxjob.N[0], auxjob.N[1],grad);
@@ -1827,7 +1983,59 @@ void PDDSparseGM::Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<un
     }
     //MPI_Finalize();
 }
-
+void PDDSparseGM::Compute_h_N(BVP bvp, double eps, std::vector<double> & h_vec, std::vector<int> & N_vec){
+    if(myid==server){
+        std::map<direction, std::vector<std::vector <int> > > labels;
+        double s_params[4],h_aux,h_max;
+        int aux_size;
+        std::vector<double> knot_est_variance;
+        Eigen::VectorXd X_aux, N_aux,E_P_aux;
+        X_aux.resize(2); N_aux.resize(2); E_P_aux.resize(2);
+        knot_est_variance.resize(nNodes);
+        h_vec.resize(nNodes);
+        N_vec.resize(nNodes);
+        //var_G*u vector
+        FILE *pfile;
+        pfile = fopen("Output/Debug/h_and_N.csv","w");
+        fprintf(pfile,"Knot,h,N\n");
+        for(int i = 0; i < nNodes; i++) knot_est_variance[i] = 0.0;
+        for(int k=0; k<G_sparse_var.outerSize(); ++k){
+        for (Eigen::SparseMatrix<double>::InnerIterator it(G_sparse_var,k); it; ++it)
+            {
+                knot_est_variance[it.row()] += knot_solutions[it.col()]*knot_solutions[it.col()]*it.value();
+            }
+        }
+        for(int i = 0; i < nNodes; i++){
+            Labels_Stencil(i);
+            //Stencil parameters
+            for(int i = 0; i < 4; i++) s_params[i] = parameters[i];
+            if(labels[South].size()>0){
+                //s_params[0] = interfaces[interface_map[labels[South][0]]].position[0][0];
+                s_params[1] = interfaces[interface_map[labels[South][0]]].position[0][1];
+            }
+            if(labels[West].size()>0){
+                s_params[0] = interfaces[interface_map[labels[West][0]]].position[0][0];
+                //s_params[1] = interfaces[interface_map[labels[West][0]]].position[0][1];
+            }
+            if(labels[North].size()>0){
+                aux_size = (int) interfaces[interface_map[labels[North][labels[North].size()-1]]].position.size();
+                //s_params[2] = interfaces[interface_map[labels[North][labels[North].size()-1]]].position[aux_size - 1][0];
+                s_params[3] = interfaces[interface_map[labels[North][labels[North].size()-1]]].position[aux_size - 1][1];
+            }
+            if(labels[East].size()>0){
+                aux_size = (int) interfaces[interface_map[labels[East][labels[East].size()-1]]].position.size();
+                s_params[2] = interfaces[interface_map[labels[East][labels[East].size()-1]]].position[aux_size - 1][0];
+                //s_params[3] = interfaces[interface_map[labels[East][labels[East].size()-1]]].position[aux_size - 1][1];
+            }
+            h_max = pow(bvp.boundary.Dist(s_params, X_aux, E_P_aux, N_aux)/(
+            (N_aux.transpose()*bvp.sigma.Value(X_aux,0.0)).norm()*2*0.5826),2.0);
+            h_aux = 0.3333*eps*h0/bias(i);
+            h_vec[i] = std::min(h_max,h_aux);
+            N_vec[i] = std::max((int)(9.0*knot_est_variance[i]/(eps*eps)),10000);
+            fprintf(pfile,"%d,%e,%d\n",i,h_vec[i],N_vec[i]);
+        }
+    }
+}
 std::vector<double> PDDSparseGM::Read_File(char fname[256]){
     std::vector<double> output;
     char *line_buf = NULL;

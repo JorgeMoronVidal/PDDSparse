@@ -419,7 +419,7 @@ bool Stencil::Is_Interior(void){
     return false;
 }
 void Stencil::Projection(Eigen::VectorXd X, Eigen::VectorXd & E_P){
-    Eigen::VectorXd ps1, ps2;
+    /*Eigen::VectorXd ps1, ps2;
     //SW corner
     if(AreSame(E_P(0),stencil_parameters[0])  && AreSame(E_P(1),stencil_parameters[1])){
         ps1 = ps2 = X;
@@ -469,7 +469,37 @@ void Stencil::Projection(Eigen::VectorXd X, Eigen::VectorXd & E_P){
             }
         }
         fclose(pfile);
-    }
+    }*/
+    double distance = (X-E_P).norm();
+        Eigen::VectorXd aux;
+        aux = X;
+        aux(0) = stencil_parameters[0];
+        if(fabs(X(0)-stencil_parameters[0]) < distance)
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(0) = stencil_parameters[2];
+        if(fabs(X(0)-stencil_parameters[2])< (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(1) = stencil_parameters[1];
+        if(fabs(X(1)-stencil_parameters[1])< (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(1) = stencil_parameters[3];
+        if(fabs(X(1)-stencil_parameters[3]) < (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
 }
 void Stencil::G_Test_return(std::vector<int> & stencil_index, std::vector<double> & G){
     stencil_index.clear();

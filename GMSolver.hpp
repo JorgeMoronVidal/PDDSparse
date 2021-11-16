@@ -1,5 +1,7 @@
 #include "FKACSolver.hpp"
 #include "stencil.hpp"
+#define MULTI_INTEGRATOR 
+#define PROJECT_OUTSIDE
 class GMSolver: public EMFKAC {
     private:
         /*-dist: Distance to the boundary*/
@@ -15,8 +17,8 @@ class GMSolver: public EMFKAC {
         void LPG_Step(double rho, Boundary sten_boundary, Stencil stencil);
     public:
        /*Variance of he G matrix and the B vector*/
-       std::vector<double> var_G;
-       double var_B, APL;
+       std::vector<double> G_CT, var_G;
+       double var_B, APL, B_CT;
         GMSolver(void);
         /*Class initialization
         -boundary_value_problem is a BVP object which stores all problem's equations
