@@ -24,8 +24,8 @@ int main(int argc, char *argv[]){
     PDDS.Solve_Subdomains(bvp);
     std::vector<double> h_vec;
     std::vector<int> N_vec;
-    PDDS.Compute_h_N(bvp,0.02,h_vec,N_vec);
-    PDDS.Solve_NumVR(bvp, h_vec,N_vec);
+    PDDS.Compute_h_N(bvp,0.01,h_vec,N_vec);
+    //PDDS.Solve_NumVR(bvp, h_vec,N_vec);
     return 0;
     MPI_Finalize();
 }

@@ -554,6 +554,7 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
 
         }
         #endif
+        
       }
       #ifdef MULTI_INTEGRATOR
       stencil_CT.G_return_withrep(G_j,G_CT,var_G,Ntray);
@@ -866,13 +867,13 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
                 stencil.Projection(X,E_P);
                 #endif
                 stencil_CT.G_update(E_P,Y,bvp,c2);
-                b_CT += Z;
+                b_CT += Z + xi;
             break;        
             case 2:
-                b_CT += Z + Y*bvp.g.Value(E_P,t);
+                b_CT += Z + xi + Y*bvp.g.Value(E_P,t);
             break;
             case 3:
-                b_CT += Z  + Y*bvp.p.Value(X,t);
+                b_CT += Z  + xi  + Y*bvp.p.Value(X,t);
             break;
             default : 
                 std::cout << "Something went wrong while solving";

@@ -42,13 +42,18 @@
 #define DONE_JOB_UINT 111
 #define DONE_JOB_INT 112
 #define DONE_JOB_DOUBLE 113
+#define REQUEST_INTERFACE 150
+#define REPLY_INTERFACE 151
+#define TAG_INTERFACE_X 160
+#define TAG_INTERFACE_Y 161
+#define TAG_INTERFACE_INDEX 162
 //Interfaces
 #define INTERSECTIONS_YES
 #include "GMSolver.hpp"
 #include "interface.hpp"
 #include "stencil.hpp"
 #include "subdomain.hpp"
-#include<eigen3/Eigen/SparseLU>
+#include <eigen3/Eigen/SparseLU>
 #include <mpi.h>
 #include <time.h>
 #include <string.h>
@@ -108,7 +113,7 @@ class PDDSparseGM{
           -NE is the north east point of the domain.
           -Sol is the vector of solutions
         */
-       Eigen::VectorXd SW, NE, knot_solutions;
+       Eigen::VectorXd SW, NE;
        /*G and B storage vector*/
        std::vector<double> G, G_CT, B, B_CT, G_var, B_var;
        std::vector<int>  G_j, G_i, B_i;
@@ -124,20 +129,24 @@ class PDDSparseGM{
        Eigen::VectorXd position;
        /*Filename of the Flux DEBUG File*/
        char debug_fname[256];
-       Eigen::SparseMatrix<double> G_sparse_var;
-       Eigen::VectorXd bias;
+       Eigen::SparseMatrix<double> G_sparse_var, G_sparse_GM, G_sparse_InvApprox;
+       Eigen::VectorXd bias, knot_solutions;
        /*Starts the MPI values and structures*/
        void MPI_Configuration(int argc, char *argv[]);
        /*Returns the interfaces the node belongst to*/
        std::vector<std::vector<int> > Get_Interfaces(int index);
        /*Returns the stencils labels*/
        std::map<direction, std::vector<std::vector <int> > > Labels_Stencil(int index);
-       /*Send node information*/
+       /*Sends node information*/
        void Send_Node(PDDSJob job);
        /*Send node information*/
        void Send_Node_Loop(PDDSJob job);
-       /*Receive node information*/
+        /*Sends interface information*/
+       void Send_Interface(std::vector<Eigen::VectorXd> positions, std::vector<int> indexes);
+       /*Receives node information*/
        bool Receive_Node(PDDSJob & job);
+       /*Receives interface information*/
+       bool Receive_Interface(std::vector<double> & x, std::vector<double> &y, std::vector<int> &indexes);
        /*Sends the stencil data to the worker*/
        void Send_Stencil_Data(int index);
        void Send_Stencil_Data_Loop(int index);
@@ -146,12 +155,18 @@ class PDDSparseGM{
        Stencil Recieve_Stencil_Data_Loop(void);
        /*Send G matrix and B Matrix*/
        void Send_G_B(void);
+       /*Send B vector to server*/
+       void Send_B(void);
        /*Send 2 Gmatrix and 2 BMatrix*/
        void Send_G_B_2(void);
        /*Receive G matrix and B Matrix*/
        void Receive_G_B(void);
+       /*Receive B vector from worker*/
+       void Receive_B(void);
        /*Send 2 Gmatrix and 2 BMatrix*/
        void Receive_G_B_2(void);
+       /*Computes the inner elements of B with the pseudospectral method*/
+       void Compute_B_Deterministic(void);
        /*Having G and B as triplets, computes the solution for the PDDS problem*/
        void Compute_Solution(BVP bvp);
        /*Having 2 Gs and 2 Bs as triplets, computes the solution for the PDDS problem*/
