@@ -51,6 +51,16 @@
         "list": "cpp",
         "ctime": "cpp",
         "core": "cpp",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp",
+        "set": "cpp",
+        "iomanip": "cpp",
+        "thread": "cpp",
+        "cfenv": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp"
     }
 }

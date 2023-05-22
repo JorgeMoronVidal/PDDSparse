@@ -4,6 +4,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_interp2d.h>
 #include <gsl/gsl_spline2d.h>
+#include <gsl/gsl_errno.h>
 
 /*2D look up table class which uses gsl spline2D*/
 class LookUpTable{

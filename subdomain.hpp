@@ -18,6 +18,7 @@
 #define SEND_X 212
 #define SEND_Y 213
 #define SEND_SOL 214
+#define SEND_SOL_NOISY 215
 //enum direction {North, South, East, West};
 class Subdomain{
     private:

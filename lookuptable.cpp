@@ -92,6 +92,7 @@ void LookUpTable::Init(int dim, std::string file){
     xacc = gsl_interp_accel_alloc();
     yacc = gsl_interp_accel_alloc();
     gsl_spline2d_init(spline, x[0], x[1], z, len[0], len[1]);
+    gsl_set_error_handler_off();
 }
 
 //Evaluation of the interpolated function when only a position is asked

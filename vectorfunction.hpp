@@ -47,11 +47,14 @@ class VectorFunction{
                   std::string input);
 
         /*
-        Returns the value of the function in X with
-        normal vector N.
-        Inputs: std::EigenvectorXf, std::EigenvectorXd
+        Returns the value of the gradient of a scalar function.
         */
         Eigen::VectorXd Value(Eigen::VectorXd position,double t);
+
+        /*
+        Returns the value of the scalar function whose gradient is computed
+        */
+       Eigen::VectorXd Value_escalar(Eigen::VectorXd position, double t);
 };  
 
 //Default function which always returns a vector full of 0.0f

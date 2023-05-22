@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+ <rdmgr>
+  <timestamp type="u64_t">1637592739</timestamp>
+  <hostname type="string">jmoron-ZenBook</hostname>
+  <os type="string">linux</os>
+  <product type="string">Intel® oneAPI VTune™ Profiler 2021.7.1</product>
+  <buildNumber type="s32_t">619561</buildNumber>
+  <logicalCPUCount type="s32_t">8</logicalCPUCount>
+  <physicalCoreCount type="s32_t">4</physicalCoreCount>
+  <processorPackageCount type="s32_t">1</processorPackageCount>
+  <CPUFrequency type="s64_t">2299000000</CPUFrequency>
+  <CPUFamily type="s32_t">6</CPUFamily>
+  <CPUModel type="s32_t">142</CPUModel>
+  <CPUStepping type="s32_t">12</CPUStepping>
+  <CPUBrandName type="string">Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz</CPUBrandName>
+  <isa type="string">avx2</isa>
+  <mpirank type="s32_t">4</mpirank>
+  <collectionTimeBegin type="u64_t">1637592741</collectionTimeBegin>
+  <collectionTimeEnd type="u64_t">1637592782</collectionTimeEnd>
+  <variables>
+   <at type="string">ps</at>
+   <mpirank type="string">4</mpirank>
+  </variables>
+ </rdmgr>
+</root>

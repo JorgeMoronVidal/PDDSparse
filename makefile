@@ -9,7 +9,7 @@
 #
 
 # define the C/C++ compiler to use
-CC = mpicxx
+CC = g++
 
 # define compile-time flags NOTE: last two flags required for C++ 11 spec on osx
 CFLAGS = -g -Wall
@@ -28,8 +28,8 @@ LFLAGS = -L/usr/local/lib
 LIBS = -lgsl -lgslcblas -lm 
 
 # define the source files, default here is main.cpp
-SRCS = main_Dirich_Loop.cpp PDDSparseGM.cpp interface.cpp subdomain.cpp BVP.cpp stencil.cpp scalarfunction.cpp scalarfunctionN.cpp vectorfunction.cpp matrixfunction.cpp rbfunction.cpp boundary.cpp lookuptable.cpp rectangle.cpp FKACSolver.cpp GMSolver.cpp
-
+#SRCS = main_GM.cpp PDDSparseGM.cpp interface.cpp subdomain.cpp BVP.cpp stencil.cpp scalarfunction.cpp scalarfunctionN.cpp vectorfunction.cpp matrixfunction.cpp rbfunction.cpp boundary.cpp lookuptable.cpp rectangle.cpp FKACSolver.cpp GMSolver.cpp
+SRCS = main_GM.cpp BVP.cpp stencil.cpp scalarfunction.cpp scalarfunctionN.cpp vectorfunction.cpp matrixfunction.cpp rbfunction.cpp boundary.cpp lookuptable.cpp rectangle.cpp FKACSolver.cpp GMSolver.cpp
 # define the object files 
 #
 # This uses Suffix Replacement within a macro:
@@ -41,7 +41,7 @@ SRCS = main_Dirich_Loop.cpp PDDSparseGM.cpp interface.cpp subdomain.cpp BVP.cpp 
 OBJS = $(SRCS:.c=.o)
 
 # define the executable file  name
-MAIN =  main_2
+MAIN =  main_NoProy
 
 
 

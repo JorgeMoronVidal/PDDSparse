@@ -1,0 +1,4 @@
+task,total_tike,task_time,N_process
+Reading configuration File,1.971521e-03,1.971361e-03,4
+Fullfilling interfaces,5.887791e-03,3.916270e-03,1
+************WARMING UP***********

@@ -1,7 +1,7 @@
 #include "PDDSparseGM.hpp"
-#include "poisson_3.hpp"
+#include "Monegros_Poisson.hpp"
 #include "rectangle.hpp"
-//mpiexec -np 4 xterm -e gdb ./main -ex run
+//scp -r PDDSparse fbernal0@login.g100.cineca.it:/g100/home/userexternal/fbernal0/LoopStudy
 int main(int argc, char *argv[]){
    std::string config("configuration.txt");
     PDDSparseGM PDDS(argc,argv,config);
@@ -22,10 +22,11 @@ int main(int argc, char *argv[]){
     bvp.BVP_init(2,scalar_init,scalarN_init,vector_init, matrix_init,string_init, Equation_RBF);
     PDDS.Solve(bvp);
     PDDS.Solve_Subdomains(bvp);
-    std::vector<double> h_vec;
-    std::vector<int> N_vec;
-    PDDS.Compute_h_N(bvp,0.01,h_vec,N_vec);
-    //PDDS.Solve_NumVR(bvp, h_vec,N_vec);
-    return 0;
+    std::vector<double> h_vec(11277,0.08);
+    std::vector<int> N_vec(11277,200);
+    PDDS.Intermediate_Step(bvp,h_vec, N_vec);
+    PDDS.Compute_h_N(bvp, 0.01, h_vec,N_vec);
+    PDDS.Solve_NumVR(bvp, h_vec,N_vec);
     MPI_Finalize();
+    return 0;
 }

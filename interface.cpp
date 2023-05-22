@@ -106,9 +106,9 @@ void Interface::Print(int interface_i){
     pFile = fopen(filename, "w");
     fprintf(pFile,"index,x,y,solved,solution\n");
     for(int i = 0; i < (int) index.size(); i++){
-        fprintf(pFile,"%d\t %f \t %f \t %d \t %f \n",
+        fprintf(pFile,"%d\t %f \t %f \t %f \n",
         index[i], position[i][0], position[i][1],
-        solved_nodes[i], solution[i]);
+        solution[i]);
     }
     fclose(pFile);
 }

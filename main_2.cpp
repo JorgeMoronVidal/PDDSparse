@@ -21,6 +21,6 @@ int main(int argc, char *argv[]){
     matrix_init["sigma"] = Equation_sigma;
     bvp.Boundary_init(Rectangle2D, Stopping);
     bvp.BVP_init(2,scalar_init,scalarN_init,vector_init, matrix_init,string_init, Equation_RBF);
-    PDDS.Solve_Subdomains(bvp);
+    PDDS.Solve(bvp);
     return 0;
 }

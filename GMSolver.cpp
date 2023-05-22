@@ -57,7 +57,6 @@ bool GMSolver::Inside(){
 
           } else {
 
-              X = E_P;
               status = time_out;
 
           }
@@ -83,7 +82,6 @@ bool GMSolver::Inside(){
 
             } else {
 
-              X = E_P;
               status = time_out;
 
           }
@@ -94,7 +92,6 @@ bool GMSolver::Inside(){
 
       case stop:
         ji_t = 0.0;
-        X = E_P;
         return false;
         break;
 
@@ -153,6 +150,8 @@ void GMSolver::LPG_Step(double rho, Boundary sten_boundary, Stencil stencil){
 }
 double GMSolver::Solve(Eigen::VectorXd X0, double T_start, double tolerance){
     for(unsigned int i = 0; i < 10; i++) sums[i] = 0.0;
+    Eigen::VectorXd aux;
+    double distance;
     N_trayectories = 0;
     N_rngcalls = 0;
     increment.resize(X0.size());
@@ -185,12 +184,44 @@ double GMSolver::Solve(Eigen::VectorXd X0, double T_start, double tolerance){
             N_rngcalls += X0.size();
             VR_CV_Step();
         }while(Inside());
+        #ifdef PROJECT_OUTSIDE
+        distance = (X-E_P).norm();
+        aux = X;
+        aux(0) = params[0];
+        if(fabs(X(0)-params[0]) < distance)
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(0) = params[2];
+        if(fabs(X(0)-params[2])< (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(1) = params[1];
+        if(fabs(X(1)-params[1])< (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(1) = params[3];
+        if(fabs(X(1)-params[3]) < (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        #endif
         if(status == time_out){
           sol_0 = Y*bvp.p.Value(X,0.0f)+Z;
         } else {
           sol_0 = Y*bvp.g.Value(E_P,t)+Z;
         }
         Update_Stat(sol_0,xi);
+        if(N_trayectories%1000000 == 0)std::cout << err << " " << std <<std::endl;
     }while(2.0*std > tolerance*err);
     norm = 1.0/N_trayectories;
     covar =  (sums[6] - sums[2]*sums[4]*norm)*norm;
@@ -207,6 +238,8 @@ double GMSolver::Solve(Eigen::VectorXd X0, double tolerance){
 }
 double GMSolver::Solve(Eigen::VectorXd X0, double T_start, unsigned int Ntray){
     for(unsigned int i = 0; i < 10; i++) sums[i] = 0.0;
+    Eigen::VectorXd aux;
+    double distance;
     increment.resize(X0.size());
     X.resize(X0.size());
     E_P.resize(X0.size());
@@ -221,13 +254,42 @@ double GMSolver::Solve(Eigen::VectorXd X0, double T_start, unsigned int Ntray){
             N_rngcalls += X0.size();
             VR_CV_Step();
         }while(Inside());
-
+        #ifdef PROJECT_OUTSIDE
+        distance = (X-E_P).norm();
+        aux = X;
+        aux(0) = params[0];
+        if(fabs(X(0)-params[0]) < distance)
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(0) = params[2];
+        if(fabs(X(0)-params[2])< (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(1) = params[1];
+        if(fabs(X(1)-params[1])< (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        aux = X;
+        aux(1) = params[3];
+        if(fabs(X(1)-params[3]) < (X-E_P).norm())
+        {
+          E_P = aux; 
+          distance = (X-E_P).norm();
+        }
+        #endif
         if(status == time_out){
           sol_0 = Y*bvp.p.Value(X,0.0f)+Z;
         } else {
           sol_0 = Y*bvp.g.Value(E_P,t)+Z;
         }
-
         Update_Stat(sol_0,xi);
     }
     norm = 1.0f/N_trayectories;
@@ -235,7 +297,6 @@ double GMSolver::Solve(Eigen::VectorXd X0, double T_start, unsigned int Ntray){
     var_xi = sums[5]*norm - sums[4]*sums[4]*norm*norm;
     pearson_c = covar/sqrt((sums[3]*norm - (sums[0]-sums[4])*
     (sums[0]-sums[4])*norm*norm)*var_xi);
-
     return mean;
 }
 double GMSolver::Solve(Eigen::VectorXd X0, unsigned int Ntray){
@@ -551,7 +612,6 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
             break;
             default : 
                 std::cout << "Something went wrong while solving";
-
         }
         #endif
         
@@ -572,14 +632,30 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
 }
 void GMSolver::Solve(Eigen::VectorXd X0, double c2, Stencil stencil, 
              std::vector<int> & G_j, std::vector<double> & G, double &B, 
-             unsigned int Ntray, unsigned int N_job, VectorFunction & grad){
-Solve(X0, INFINITY, c2, stencil, G_j, G, B, Ntray, N_job, grad);
+             unsigned int Ntray, unsigned int N_job, VectorFunction & grad,
+             VectorFunction &grad_noisy){
+Solve(X0, INFINITY, c2, stencil, G_j, G, B, Ntray, N_job, grad, grad_noisy);
 }
 void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
              Stencil & stencil, std::vector<int> & G_j,
              std::vector<double> & G, double & B,  unsigned int Ntray,
-             unsigned int N_job, VectorFunction & grad){
+             unsigned int N_job, VectorFunction & grad, VectorFunction & grad_noisy){
     for(unsigned int i = 0; i < 10; i++) sums[i] = 0.0;
+    double trap_EM = 0.0;
+    sum_phi_trap = 0.0;
+    sum_phiphi_trap = 0.0;
+    sum_phi_trap_VR = 0.0;
+    sum_phiphi_trap_VR = 0.0;
+    /* sums[0] = sum_aux_var;
+       sums[1] = sum_xi;
+       sums[2] = sum_xi ^2;
+       sums[3] = sum_approx_score;
+       sums[4] = sum_approx_score^2;
+       sums[5] = sum_(approx_score*xi);
+       sums[6] = sum_approx_score_noisy;
+       sums[7] = sum_approx_score_noisy^2;
+       sums[8] = sum_(approx_score_noisy*xi)
+    */
     increment.resize(X0.size());
     X.resize(X0.size());
     E_P.resize(X0.size());
@@ -598,9 +674,10 @@ void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
     G_j.clear();
     G.clear();
     var_G.clear();
-    double b = 0.0, bb = 0.0;
+    double b = 0.0, bb = 0.0, approx_var, approx_score;
     B = 0.0;
     APL = 0.0;
+    N_rngcalls = 0;
     stencil.Reset();
     /*Control variable 
     -0 if trayectory still inside
@@ -619,10 +696,12 @@ void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
         Reset(X0,T_start);
         control = 0;
         sigma = bvp.sigma.Value(X0,t);
+        approx_var = 0;
         do{
             Increment_Update();
             N_rngcalls += X0.size();
             xi += Y*(-bvp.sigma.Value(X,t).transpose()*grad.Value(X,0.0)).dot(increment);
+            approx_var += pow(Y*(bvp.sigma.Value(X,t)*grad.Value(X,0.0)).norm(),2)*h;
             Step();
             APL += h;
             if(t <= 0){
@@ -633,7 +712,25 @@ void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
                 break;
             }
         } while(control == 0);
-        
+        sum_phi_trap += Z + Y* bvp.u.Value(E_P,t);
+        sum_phiphi_trap += pow(Z + Y* bvp.u.Value(E_P,t),2);
+        sum_phi_trap_VR += Z + Y* bvp.u.Value(E_P,t) + xi;
+        sum_phiphi_trap_VR += pow(Z + Y* bvp.u.Value(E_P,t) + xi,2);
+        if(std::isnan(grad.Value_escalar(E_P,t)(0))){
+            approx_score = sums[0]*(1.0/(1.0+i)); 
+        } else {
+            approx_score = Z + Y* grad.Value_escalar(E_P,t)(0);
+        }
+        sums[0] += approx_var;
+        sums[1] += xi;
+        sums[2] += xi*xi;
+        sums[3] += approx_score;
+        sums[4] += approx_score*approx_score;
+        sums[5] += xi*approx_score;
+        approx_score = Z + Y* grad_noisy.Value_escalar(E_P,t)(0);
+        sums[6] += approx_score;
+        sums[7] += approx_score*approx_score;
+        sums[8] += xi*approx_score;
         switch (control) {        
             case 1:
             #ifdef PROJECT_OUTSIDE
@@ -672,6 +769,12 @@ void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
                 }
                 
         } while(control == 0);
+        if(std::isnan(grad.Value_escalar(E_P,t)(0))){
+            sums[9] += sums[9]*(1.0/(1.0+i)); 
+        } else {
+            sums[9] += Z + Y* grad.Value_escalar(E_P,t)(0);
+        }
+        trap_EM += Z + Y * bvp.u.Value(E_P,t);
         switch (control) {        
             case 1:
                 #ifdef PROJECT_OUTSIDE
@@ -700,22 +803,54 @@ void GMSolver::Solve(Eigen::VectorXd X0, double T_start, double c2,
       #endif
       stencil.G_return_withrep(G_j, G, var_G,Ntray);
       B = b/Ntray;
+      Est_var = sums[0]/Ntray;
+      //PCoeff = (N_job*1.0/Ntray)*(sums[5]/N_job-sums[1]*sums[3]/(N_job*N_job))/(sqrt((sums[2]/N_job)-pow(sums[1]/N_job,2))*sqrt((sums[4]/N_job)-pow(sums[3]/N_job,2)));
+      sum_xi = sums[1]/Ntray;
+      sum_phi = sums[3]/Ntray;
+      sum_xixi = sums[2]/Ntray;
+      sum_phiphi = sums[4]/Ntray;
+      sum_phixi = sums[5]/Ntray;
+      sum_phip = sums[6]/Ntray;
+      sum_phiphip = sums[7]/Ntray;
+      sum_phipxi = sums[8]/Ntray;
+      sum_phi_trap = sum_phi_trap/Ntray;
+      sum_phiphi_trap = sum_phiphi_trap/Ntray;
+      sum_phi_trap_VR = sum_phi_trap_VR/Ntray;
+      sum_phiphi_trap_VR = sum_phiphi_trap_VR/Ntray;
+      sum_biasNum = (sums[9]-sums[3])/Ntray;
+      sum_biasTrap = (trap_EM/Ntray)-sum_phi_trap;
+      //printf("biasNum %f biasTrap %f\n",sum_biasNum, sum_biasTrap);
       var_B = bb/Ntray-pow(B,2.0);
-      APL = APL/(h*N_job);
+      APL = APL/(h*Ntray);
       h = h_cent;
       sqrth = sqrt(h_cent);
 }
 void GMSolver::Solve_mix(Eigen::VectorXd X0, double c2,
              double rho, Stencil & stencil, std::vector<int> & G_j,
              std::vector<double> & G, double & B, unsigned int Ntray,
-             unsigned int N_job, VectorFunction & grad){
-                 Solve_mix( X0, INFINITY, c2, rho, stencil,  G_j, G, B, Ntray, N_job, grad);
+             unsigned int N_job, VectorFunction & grad, VectorFunction & grad_noisy){
+                 Solve_mix( X0, INFINITY, c2, rho, stencil,  G_j, G, B, Ntray, N_job, grad , grad_noisy);
              }
 void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
              double rho, Stencil & stencil, std::vector<int> & G_j,
              std::vector<double> & G, double & B, unsigned int Ntray,
-             unsigned int N_job, VectorFunction & grad){
+             unsigned int N_job, VectorFunction & grad, VectorFunction & grad_noisy){
     for(unsigned int i = 0; i < 10; i++) sums[i] = 0.0;
+    sum_phi_trap = 0.0;
+    sum_phiphi_trap = 0.0;
+    sum_phi_trap_VR = 0.0;
+    sum_phiphi_trap_VR = 0.0;
+    double trap_EM = 0;
+    /* sums[0] = sum_aux_var;
+       sums[1] = sum_xi;
+       sums[2] = sum_xi ^2;
+       sums[3] = sum_approx_score;
+       sums[4] = sum_approx_score^2;
+       sums[5] = sum_(approx_score*xi);
+       sums[6] = sum_approx_score_noisy;
+       sums[7] = sum_approx_score_noisy^2;
+       sums[8] = sum_(approx_score_noisy*xi)
+    */
     increment.resize(X0.size());
     X.resize(X0.size());
     E_P.resize(X0.size());
@@ -734,9 +869,10 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
     G_j.clear();
     G.clear();
     var_G.clear();
-    double b = 0.0, bb = 0.0;
+    double b = 0.0, bb = 0.0, approx_var,approx_score;
     B = 0.0;
     APL = 0.0;
+    N_rngcalls = 0;
     stencil.Reset();
     /*Control variable 
     -0 if trayectory still inside
@@ -751,6 +887,16 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
       #endif 
       var_B = 0.0;
       APL = 0.0;
+      Est_var = 0;
+      Est_var = sums[0]/Ntray;
+      sum_xi = 0.0;
+      sum_phi = 0.0;
+      sum_xixi = 1.0;
+      sum_phiphi = 1.0;
+      sum_phixi = 1.0;
+      sum_phip = 0.0;
+      sum_phiphip = 1.0;
+      sum_phipxi = 1.0;
     } else{
       double h_cent = bvp.boundary.Dist(stencil.stencil_parameters, X0, E_P, N);
       h_cent = h;
@@ -768,6 +914,7 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
         Reset(X0,T_start);
         d_k = sten_boundary.Dist(stencil.stencil_parameters, X, E_P, N);
         control = 0;
+        approx_var = 0.0;
         do{
             if(bvp.boundary.stop(E_P)){
                 sigma = bvp.sigma.Value(X,t);
@@ -775,6 +922,7 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
                 //xi += (-1)*Y*((bvp.sigma.Value(X,t)).transpose()*grad.Value(X,t)).dot(increment);
                 N_rngcalls += X0.size();
                 xi += Y*(-bvp.sigma.Value(X,t)*grad.Value(X,0.0)).dot(increment);
+                approx_var += pow(Y*(bvp.sigma.Value(X,t)*grad.Value(X,0.0)).norm(),2)*h;
                 //std::cout << "Numeric" << Y*(-bvp.sigma.Value(X,t)*grad.Value(X,0.0)).dot(increment) << "Analytic" << Y*bvp.F.Value(X,t).dot(increment) << std::endl;
                 //getchar();
                 Step();
@@ -804,8 +952,27 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
                 sigma = bvp.sigma.Value(X,t);
             }
         } while(control == 0);
+        sums[0] += approx_var;
+        sums[1] += xi;
+        sums[2] += xi*xi;
+        sum_phi_trap += Z + Y* bvp.u.Value(E_P,t);
+        sum_phiphi_trap += pow(Z + Y* bvp.u.Value(E_P,t),2);
+        sum_phi_trap_VR += Z + Y* bvp.u.Value(E_P,t) + xi;
+        sum_phiphi_trap_VR += pow(Z + Y* bvp.u.Value(E_P,t) + xi,2);
         switch (control) {        
             case 1:
+                if(std::isnan(grad.Value_escalar(E_P,t)(0))){
+                    approx_score = sums[0]*(1.0/(1.0+i)); 
+                } else {
+                    approx_score = Z + Y* grad.Value_escalar(E_P,t)(0);
+                }
+                sums[3] += approx_score;
+                sums[4] += approx_score*approx_score;
+                sums[5] += xi*approx_score;
+                approx_score = Z + Y* grad_noisy.Value_escalar(E_P,t)(0);
+                sums[6] += approx_score;
+                sums[7] += approx_score*approx_score;
+                sums[8] += xi*approx_score;
                 #ifdef PROJECT_OUTSIDE
                 stencil.Projection(X,E_P);
                 #endif
@@ -816,6 +983,17 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
             case 2:
                 b += Z + xi + Y*bvp.g.Value(E_P,t);
                 bb += pow(Z + xi + Y*bvp.g.Value(E_P,t),2.0);
+                if(std::isnan(grad.Value_escalar(E_P,t)(0))){
+                    approx_score = sums[0]*(1.0/(1.0+i)); 
+                } else {
+                    approx_score = Z + Y* grad.Value_escalar(E_P,t)(0);
+                }
+                sums[3] += approx_score;
+                sums[4] += pow(approx_score,2);
+                sums[5] += xi*approx_score;
+                sums[6] += approx_score;
+                sums[7] += approx_score*approx_score;
+                sums[8] += xi*approx_score;
             break;
             case 3:
                 b += Z + xi + Y*bvp.p.Value(X,t);
@@ -861,6 +1039,12 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
                 sigma = bvp.sigma.Value(X,t);
             }
         } while(control == 0);
+        if(std::isnan(grad.Value_escalar(E_P,t)(0))){
+            sums[9] += sums[9]*(1.0/(1.0+i)); 
+        } else {
+            sums[9] += Z + Y* grad.Value_escalar(E_P,t)(0);
+        }
+        trap_EM += Z + Y*bvp.u.Value(E_P,t);
         switch (control) {        
             case 1:
                 #ifdef PROJECT_OUTSIDE
@@ -889,8 +1073,25 @@ void GMSolver::Solve_mix(Eigen::VectorXd X0, double T_start, double c2,
       #endif
       stencil.G_return_withrep(G_j, G, var_G,Ntray);
       B = b/Ntray;
+      Est_var = sums[0]/Ntray;
+      //PCoeff = (N_job*1.0/Ntray)*(sums[5]/N_job-sums[1]*sums[3]/(N_job*N_job))/(sqrt((sums[2]/N_job)-pow(sums[1]/N_job,2))*sqrt((sums[4]/N_job)-pow(sums[3]/N_job,2)));
+      sum_xi = sums[1]/Ntray;
+      sum_phi = sums[3]/Ntray;
+      sum_xixi = sums[2]/Ntray;
+      sum_phiphi = sums[4]/Ntray;
+      sum_phixi = sums[5]/Ntray;
+      sum_phip = sums[6]/Ntray;
+      sum_phiphip = sums[7]/Ntray;
+      sum_phipxi = sums[8]/Ntray;
+      sum_phi_trap = sum_phi_trap/Ntray;
+      sum_phiphi_trap = sum_phiphi_trap/Ntray;
+      sum_phi_trap_VR = sum_phi_trap_VR/Ntray;
+      sum_phiphi_trap_VR = sum_phiphi_trap_VR/Ntray;
+      sum_biasNum = (sums[9]-sums[3])/Ntray;
+      sum_biasTrap = (trap_EM /Ntray)-sum_phi_trap;
+      //printf("sum_biasNum %.10e sum_biasTrap %.10e \n",sum_biasNum, sum_biasTrap);
       var_B = bb/Ntray-pow(B,2.0);
-      APL = APL/(h*N_job);
+      APL = APL/(h*Ntray);
       h = h_cent;
       sqrth = sqrt(h_cent);
   }

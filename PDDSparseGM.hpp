@@ -36,6 +36,24 @@
 #define TAG_Bval 31
 #define TAG_Bvar 32
 #define TAG_BCT 33
+#define TAG_APL 34
+#define TAG_time 35
+#define TAG_Estvar 36
+#define TAG_RNGCalls 37
+#define TAG_xi 38
+#define TAG_phi 39
+#define TAG_xixi 40
+#define TAG_phiphi 41
+#define TAG_phixi 42
+#define TAG_phip 43
+#define TAG_phiphip 44
+#define TAG_phipxi 45
+#define TAG_phi_trap 46
+#define TAG_phiphi_trap 47
+#define TAG_phi_trap_VR 48
+#define TAG_phiphi_trap_VR 49
+#define TAG_bias_num 50
+#define TAG_bias_trap 51
 #define TODO_JOB_UINT  101
 #define TODO_JOB_INT  102
 #define TODO_JOB_DOUBLE 103
@@ -49,6 +67,8 @@
 #define TAG_INTERFACE_INDEX 162
 //Interfaces
 #define INTERSECTIONS_YES
+//MPI Implementation
+//#define LOCAL_SERVERS
 #include "GMSolver.hpp"
 #include "interface.hpp"
 #include "stencil.hpp"
@@ -82,7 +102,7 @@ class PDDSparseGM{
         MPI_Comm world, workers;
         MPI_Group world_group, worker_group;
         MPI_Status status;
-        int ranks[1],work_control[2],numprocs, myid, server, workerid;
+        int ranks[1],work_control[2],numprocs, myid, server, local_server, workerid;
         /*
         Interfaces of the problem
         */
@@ -107,7 +127,7 @@ class PDDSparseGM{
           -factor that multiplies the internodal distance
           -constant of the RBF interpolator 
           */
-        double h0, T_start, eps, fac, c2;
+        double h0, T_start, eps, fac, c2,wclock_start,wclock_measure,wclock_prev;
         std::vector<double> parameters;
         /*-SW is the south west point of the domain.
           -NE is the north east point of the domain.
@@ -115,10 +135,17 @@ class PDDSparseGM{
         */
        Eigen::VectorXd SW, NE;
        /*G and B storage vector*/
-       std::vector<double> G, G_CT, B, B_CT, G_var, B_var;
+       std::vector<double> G, G_CT, B, B_CT, G_var, B_var, APL, times, xi, phi, xixi, phiphi,
+                           phixi, phip, phiphip, phipxi, Est_var, RNGCalls, PCoeff_o, PCoeff_n,
+                           phi_trap, phiphi_trap, phi_trap_VR, phiphi_trap_VR,var_phi_trap,
+                           var_phi_trap_VR, bias_num, bias_trap;
        std::vector<int>  G_j, G_i, B_i;
        /*Triplet's vector*/
-       std::vector<T> T_vec_G, T_vec_Gvar, T_vec_GCT, T_vec_B, T_vec_Bvar, T_vec_BCT;
+       std::vector<T> T_vec_G, T_vec_Gvar, T_vec_GCT, T_vec_B, T_vec_Bvar, T_vec_BCT,
+                      T_vec_APL, T_vec_times, T_vec_xi, T_vec_phi, T_vec_xixi, T_vec_phiphi,
+                      T_vec_phixi, T_vec_phip, T_vec_phiphip, T_vec_phipxi, T_vec_Estvar,
+                      T_vec_RNGCalls,T_vec_phi_trap,T_vec_phiphi_trap,T_vec_phi_trap_VR,
+                      T_vec_phiphi_trap_VR, T_vec_bias_num, T_vec_bias_trap;
         /*
           -N is the initial number of trayectories 
         */
@@ -157,14 +184,22 @@ class PDDSparseGM{
        void Send_G_B(void);
        /*Send B vector to server*/
        void Send_B(void);
+       /*Send Metadata from worker to server*/
+       void Send_Metadata(int aux_server);
        /*Send 2 Gmatrix and 2 BMatrix*/
-       void Send_G_B_2(void);
+       void Send_G_B_2(int aux_server);
        /*Receive G matrix and B Matrix*/
        void Receive_G_B(void);
        /*Receive B vector from worker*/
        void Receive_B(void);
+       /*Send Metadata from worker to server*/
+       void Receive_Metadata(void);
+       /*Process Metadata and prints it*/ 
+       void Process_Metadata(void);
        /*Send 2 Gmatrix and 2 BMatrix*/
        void Receive_G_B_2(void);
+       /*Reduce G and B*/
+       void Reduce_G_B(void);
        /*Computes the inner elements of B with the pseudospectral method*/
        void Compute_B_Deterministic(void);
        /*Having G and B as triplets, computes the solution for the PDDS problem*/
@@ -204,9 +239,13 @@ class PDDSparseGM{
        void Read_Solution(void);
        /*Solves subdomains*/
        void Solve_Subdomains(BVP bvp);
+       /*Intermediate Step*/
+       void Intermediate_Step(BVP bvp, std::vector<double> h_vec, std::vector<int> N_vec);
        /*Computes the optimal h and N given a bias and variance estimation*/
        void Compute_h_N(BVP bvp, double eps, std::vector<double> & h, std::vector<int> & N);
        /*Solves with numerical Variance Reduction after a warm-up fase*/
        void Solve_NumVR(BVP bvp, std::vector<double> h_vec, std::vector<int> N_vec);
+       /*Updates Times File*/
+       void Update_TimeFile(std::string task,int N_processors);
 };
 #endif

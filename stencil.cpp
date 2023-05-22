@@ -127,7 +127,7 @@ Eigen::MatrixXd Stencil::Compute_ipsi(std::vector<Eigen::VectorXd> & sten_positi
     }
     //std::cout << Psi;
     //getchar();
-    double cond, err;
+    //double cond, err;
     Eigen::FullPivLU<Eigen::MatrixXd> lu(Psi);
     if(lu.isInvertible()){
         iPsi = lu.inverse();
@@ -139,13 +139,13 @@ Eigen::MatrixXd Stencil::Compute_ipsi(std::vector<Eigen::VectorXd> & sten_positi
     CGS.compute(Psi);
     iPsi = CGS.solveWithGuess(I,iPsi);
     err = CGS.error();*/
-    cond = Psi.norm()*iPsi.norm();
+    //cond = Psi.norm()*iPsi.norm();
     I.resize(sten_position.size(), sten_position.size());
     I.setIdentity();
-    err = (Psi*iPsi-I).norm();
+    //err = (Psi*iPsi-I).norm();
     //fdebug = fopen(debug_fname, "a");
     //fprintf(fdebug,"iPsi computed with cond number %f and error %f \n", cond, err);
-    printf("iPsi computed with cond number %f and error %f \n", cond, err);
+    //printf("iPsi computed with cond number %f and error %f \n", cond, err);
     //fclose(fdebug);
     Psi.resize(0,0);
     return iPsi;

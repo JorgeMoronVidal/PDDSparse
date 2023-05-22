@@ -16,6 +16,8 @@ struct Interface{
     std::vector<Eigen::VectorXd> position;
     //Solution of the nodes of the interface
     std::vector<double> solution;
+    //Noisy solution of the nodes of the interface
+    std::vector<double> solution_noisy;
     //Initialization of the variables of an instance
     void Init(std::vector<int> lab, std::vector<int> ind);
     //Returns true if the node with index ind is in the interface
